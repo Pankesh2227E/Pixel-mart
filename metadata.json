@@ -1,0 +1,6 @@
+{
+  "name": "PixelMart",
+  "description": "Precision in every pixel. A premium minimalist e-commerce platform designed for high-end consumer electronics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

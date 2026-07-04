@@ -1,0 +1,12 @@
+{
+  "users": [
+    {
+      "_id": "usr_789yek6tt",
+      "name": "Test Verification User",
+      "email": "verify@pixelmart.com",
+      "passwordHash": "$2b$10$Sh/tSQErjT8b488fQ/a9NugjjFv.YEAu6oK...KHAPTrFuavBuI1a",
+      "role": "user"
+    }
+  ],
+  "orders": []
+}
