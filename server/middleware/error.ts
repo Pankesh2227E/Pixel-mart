@@ -11,7 +11,20 @@ export function errorHandler(
   res: Response,
   next: NextFunction
 ) {
-  console.error('💥 Backend Error Captured:', err);
+  const timestamp = new Date().toISOString();
+  const method = req.method;
+  const path = req.originalUrl || req.path;
+  const ip = req.ip || req.socket.remoteAddress;
+  const userAgent = req.headers['user-agent'] || 'unknown';
+
+  console.error(`💥 [${timestamp}] BACKEND ERROR CAPTURED:
+  ├─ Method: ${method}
+  ├─ Path: ${path}
+  ├─ Client IP: ${ip}
+  ├─ User-Agent: ${userAgent}
+  ├─ Error Name: ${err.name || 'Error'}
+  ├─ Message: ${err.message || 'No message'}
+  └─ Stack: ${err.stack || 'No stack trace available'}`);
 
   const statusCode = err.statusCode || 500;
   let message = err.message || 'An unexpected error occurred on the server';

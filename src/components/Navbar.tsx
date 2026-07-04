@@ -5,14 +5,14 @@
 
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingBag, Search, Menu, X, Check, ArrowRight, User } from 'lucide-react';
+import { ShoppingBag, Search, Menu, X, Check, ArrowRight, User, Heart } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { PRODUCTS } from '../data/products';
 
 export default function Navbar() {
   const { cartCount, setIsCartOpen } = useCart();
-  const { user, logout } = useAuth();
+  const { user, logout, wishlist } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchResults, setSearchResults] = useState<typeof PRODUCTS>([]);
@@ -71,6 +71,9 @@ export default function Navbar() {
             <Link to="/?category=Wearables" className="text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors">Wearables</Link>
             <Link to="/?category=Audio" className="text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors">Audio</Link>
             <Link to="/?category=Accessories" className="text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors">Accessories</Link>
+            {user?.role === 'admin' && (
+              <Link to="/admin" className="text-sm font-bold text-emerald-600 hover:text-emerald-700 transition-colors border-l border-neutral-200 pl-4">Admin Dashboard</Link>
+            )}
           </nav>
 
           {/* Search, Cart & Menu controls */}
@@ -130,6 +133,20 @@ export default function Navbar() {
                 <span className="hidden lg:inline">Sign In</span>
               </Link>
             )}
+
+            {/* Wishlist Link */}
+            <Link
+              to="/wishlist"
+              className="relative p-2 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 rounded-full transition-all"
+              title="View wishlist"
+            >
+              <Heart className="h-5 w-5" />
+              {wishlist.length > 0 && (
+                <span id="navbar-wishlist-badge" className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white ring-2 ring-white">
+                  {wishlist.length}
+                </span>
+              )}
+            </Link>
 
             {/* Shopping Cart Button */}
             <button
@@ -192,6 +209,15 @@ export default function Navbar() {
           </form>
 
           <nav className="flex flex-col space-y-2 pt-2 pb-1">
+            {user?.role === 'admin' && (
+              <Link
+                to="/admin"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="px-3 py-2 text-sm font-bold text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors"
+              >
+                Admin Dashboard
+              </Link>
+            )}
             <Link
               to="/"
               onClick={() => setIsMobileMenuOpen(false)}

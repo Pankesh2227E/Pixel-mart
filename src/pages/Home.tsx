@@ -15,6 +15,10 @@ export default function Home() {
   const [sortBy, setSortBy] = useState('featured');
   const [activeHeroSlide, setActiveHeroSlide] = useState(0);
   const [products, setProducts] = useState<any[]>(PRODUCTS);
+  const [selectedBrand, setSelectedBrand] = useState('All');
+  const [minPrice, setMinPrice] = useState<number | ''>('');
+  const [maxPrice, setMaxPrice] = useState<number | ''>('');
+  const [showFilters, setShowFilters] = useState(false);
 
   // URL State Synchronizers
   const selectedCategory = searchParams.get('category') || 'All';
@@ -54,12 +58,32 @@ export default function Home() {
     setSearchParams(searchParams);
   };
 
+  // Helper to derive brand
+  const getProductBrand = (p: any) => {
+    if (p.brand) return p.brand;
+    const nameLower = p.name.toLowerCase();
+    if (nameLower.includes('google') || nameLower.includes('pixel')) {
+      return 'Google';
+    }
+    return p.name.split(' ')[0] || 'Generic';
+  };
+
+  // Extract available brands dynamically from current loaded products
+  const availableBrands = useMemo(() => {
+    const brands = new Set<string>();
+    brands.add('All');
+    products.forEach((p) => {
+      brands.add(getProductBrand(p));
+    });
+    return Array.from(brands);
+  }, [products]);
+
   // Filter & Sort Logic
   const filteredProducts = useMemo(() => {
     let result = [...products];
 
     if (selectedCategory !== 'All') {
-      result = result.filter((p) => p.category === selectedCategory);
+      result = result.filter((p) => p.category?.toLowerCase() === selectedCategory.toLowerCase());
     }
 
     if (searchQuery) {
@@ -70,16 +94,50 @@ export default function Home() {
       );
     }
 
+    if (selectedBrand !== 'All') {
+      result = result.filter((p) => getProductBrand(p).toLowerCase() === selectedBrand.toLowerCase());
+    }
+
+    if (minPrice !== '') {
+      result = result.filter((p) => p.price >= Number(minPrice));
+    }
+
+    if (maxPrice !== '') {
+      result = result.filter((p) => p.price <= Number(maxPrice));
+    }
+
     if (sortBy === 'price-low') {
       result.sort((a, b) => a.price - b.price);
     } else if (sortBy === 'price-high') {
       result.sort((a, b) => b.price - a.price);
     } else if (sortBy === 'rating') {
       result.sort((a, b) => b.rating - a.rating);
+    } else if (sortBy === 'newest') {
+      result.sort((a, b) => {
+        const aVal = a.isNew ? 1 : 0;
+        const bVal = b.isNew ? 1 : 0;
+        if (bVal !== aVal) return bVal - aVal;
+        return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+      });
+    } else if (sortBy === 'popularity') {
+      result.sort((a, b) => {
+        const aVal = a.isBestSeller ? 1 : 0;
+        const bVal = b.isBestSeller ? 1 : 0;
+        if (bVal !== aVal) return bVal - aVal;
+        return (b.reviewsCount || 0) - (a.reviewsCount || 0);
+      });
+    } else {
+      // featured
+      result.sort((a, b) => {
+        const aVal = a.isBestSeller ? 1 : 0;
+        const bVal = b.isBestSeller ? 1 : 0;
+        if (bVal !== aVal) return bVal - aVal;
+        return b.rating - a.rating;
+      });
     }
 
     return result;
-  }, [selectedCategory, searchQuery, sortBy]);
+  }, [products, selectedCategory, searchQuery, sortBy, selectedBrand, minPrice, maxPrice]);
 
   const categories = ['All', 'Phones', 'Wearables', 'Audio', 'Accessories'];
 
@@ -201,28 +259,81 @@ export default function Home() {
           </div>
 
           {/* Quick Stats or Active filters preview */}
-          {(selectedCategory !== 'All' || searchQuery) && (
-            <div className="mt-2 md:mt-0 flex items-center space-x-2">
+          {(selectedCategory !== 'All' || searchQuery || selectedBrand !== 'All' || minPrice !== '' || maxPrice !== '') && (
+            <div className="mt-2 md:mt-0 flex flex-wrap items-center gap-2">
               <span className="text-[10px] text-neutral-400 font-mono">ACTIVE FILTERS:</span>
-              <span className="inline-flex items-center px-2 py-0.5 text-[9px] font-semibold text-neutral-700 bg-neutral-50 border border-neutral-150 rounded-full">
-                {selectedCategory !== 'All' ? `Category: ${selectedCategory}` : `Search: "${searchQuery}"`}
-                <button
-                  onClick={() => {
-                    searchParams.delete('category');
-                    searchParams.delete('search');
-                    setSearchParams(searchParams);
-                  }}
-                  className="ml-1 text-neutral-400 hover:text-neutral-900 font-bold"
-                >
-                  &times;
-                </button>
-              </span>
+              {selectedCategory !== 'All' && (
+                <span className="inline-flex items-center px-2 py-0.5 text-[9px] font-semibold text-neutral-700 bg-neutral-50 border border-neutral-150 rounded-full">
+                  Category: {selectedCategory}
+                  <button
+                    onClick={() => {
+                      searchParams.delete('category');
+                      setSearchParams(searchParams);
+                    }}
+                    className="ml-1 text-neutral-400 hover:text-neutral-900 font-bold"
+                  >
+                    &times;
+                  </button>
+                </span>
+              )}
+              {searchQuery && (
+                <span className="inline-flex items-center px-2 py-0.5 text-[9px] font-semibold text-neutral-700 bg-neutral-50 border border-neutral-150 rounded-full">
+                  Search: "{searchQuery}"
+                  <button
+                    onClick={() => {
+                      searchParams.delete('search');
+                      setSearchParams(searchParams);
+                    }}
+                    className="ml-1 text-neutral-400 hover:text-neutral-900 font-bold"
+                  >
+                    &times;
+                  </button>
+                </span>
+              )}
+              {selectedBrand !== 'All' && (
+                <span className="inline-flex items-center px-2 py-0.5 text-[9px] font-semibold text-neutral-700 bg-neutral-50 border border-neutral-150 rounded-full">
+                  Brand: {selectedBrand}
+                  <button
+                    onClick={() => setSelectedBrand('All')}
+                    className="ml-1 text-neutral-400 hover:text-neutral-900 font-bold"
+                  >
+                    &times;
+                  </button>
+                </span>
+              )}
+              {(minPrice !== '' || maxPrice !== '') && (
+                <span className="inline-flex items-center px-2 py-0.5 text-[9px] font-semibold text-neutral-700 bg-neutral-50 border border-neutral-150 rounded-full">
+                  Price: ${minPrice || '0'} - ${maxPrice || 'any'}
+                  <button
+                    onClick={() => {
+                      setMinPrice('');
+                      setMaxPrice('');
+                    }}
+                    className="ml-1 text-neutral-400 hover:text-neutral-900 font-bold"
+                  >
+                    &times;
+                  </button>
+                </span>
+              )}
+              <button
+                onClick={() => {
+                  searchParams.delete('category');
+                  searchParams.delete('search');
+                  setSearchParams(searchParams);
+                  setSelectedBrand('All');
+                  setMinPrice('');
+                  setMaxPrice('');
+                }}
+                className="text-[9px] text-neutral-400 hover:text-neutral-900 underline font-mono"
+              >
+                Clear all
+              </button>
             </div>
           )}
         </div>
 
         {/* Filters and sorting Row */}
-        <div id="filter-sorting-panel" className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center mb-8">
+        <div id="filter-sorting-panel" className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center mb-6">
           {/* Categories Tab selector */}
           <div className="flex flex-wrap gap-1.5 bg-neutral-50 p-1.5 rounded-xl border border-neutral-100/60 max-w-full overflow-x-auto">
             {categories.map((cat) => (
@@ -240,8 +351,23 @@ export default function Home() {
             ))}
           </div>
 
-          {/* Sort selection dropdown */}
+          {/* Sort selection dropdown and Filter button */}
           <div className="flex items-center space-x-2 w-full sm:w-auto self-stretch sm:self-auto justify-end">
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold border rounded-lg transition-all ${
+                showFilters || selectedBrand !== 'All' || minPrice !== '' || maxPrice !== ''
+                  ? 'bg-neutral-900 border-neutral-900 text-white'
+                  : 'bg-white border-neutral-200 text-neutral-700 hover:bg-neutral-50'
+              }`}
+            >
+              <Filter className="h-3.5 w-3.5" />
+              <span>Filters</span>
+              {(selectedBrand !== 'All' || minPrice !== '' || maxPrice !== '') && (
+                <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              )}
+            </button>
+
             <SlidersHorizontal className="h-3.5 w-3.5 text-neutral-400" />
             <select
               id="sort-select"
@@ -250,12 +376,80 @@ export default function Home() {
               className="text-xs bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-1.5 text-neutral-700 focus:outline-none focus:ring-1 focus:ring-neutral-400"
             >
               <option value="featured">Sort: Featured</option>
+              <option value="newest">Sort: Newest</option>
+              <option value="popularity">Sort: Popularity</option>
               <option value="price-low">Price: Low to High</option>
               <option value="price-high">Price: High to Low</option>
               <option value="rating">Customer Rating</option>
             </select>
           </div>
         </div>
+
+        {/* Brand and Price Filter expandable panel */}
+        <AnimatePresence>
+          {showFilters && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="overflow-hidden border-b border-neutral-100 pb-6 mb-8"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 bg-neutral-50/50 p-4 rounded-xl border border-neutral-100/80">
+                {/* Brand Filter */}
+                <div>
+                  <span className="block text-xs font-bold text-neutral-800 uppercase tracking-wider mb-2">Filter by Brand</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {availableBrands.map((brand) => (
+                      <button
+                        key={brand}
+                        onClick={() => setSelectedBrand(brand)}
+                        className={`px-3 py-1 text-xs rounded-md border transition-all ${
+                          selectedBrand === brand
+                            ? 'bg-neutral-900 border-neutral-900 text-white'
+                            : 'bg-white border-neutral-200 text-neutral-600 hover:border-neutral-350'
+                        }`}
+                      >
+                        {brand}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Price Range Filter */}
+                <div>
+                  <span className="block text-xs font-bold text-neutral-800 uppercase tracking-wider mb-2">Price Range (USD)</span>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="number"
+                      placeholder="Min"
+                      value={minPrice}
+                      onChange={(e) => setMinPrice(e.target.value === '' ? '' : Number(e.target.value))}
+                      className="w-24 px-2 py-1 text-xs bg-white border border-neutral-200 rounded-md focus:outline-none focus:ring-1 focus:ring-neutral-400"
+                    />
+                    <span className="text-neutral-400 text-xs">to</span>
+                    <input
+                      type="number"
+                      placeholder="Max"
+                      value={maxPrice}
+                      onChange={(e) => setMaxPrice(e.target.value === '' ? '' : Number(e.target.value))}
+                      className="w-24 px-2 py-1 text-xs bg-white border border-neutral-200 rounded-md focus:outline-none focus:ring-1 focus:ring-neutral-400"
+                    />
+                    <button
+                      onClick={() => {
+                        setMinPrice('');
+                        setMaxPrice('');
+                        setSelectedBrand('All');
+                      }}
+                      className="text-[10px] text-neutral-500 hover:text-neutral-900 underline ml-2 font-semibold"
+                    >
+                      Reset filters
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Dynamic Bento Product Grid */}
         <AnimatePresence mode="popLayout">

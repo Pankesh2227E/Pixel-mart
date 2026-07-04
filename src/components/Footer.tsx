@@ -106,20 +106,20 @@ export default function Footer() {
           <div>
             <h5 className="text-xs font-semibold text-neutral-900 uppercase tracking-wider mb-4">Support</h5>
             <ul className="space-y-2 text-xs text-neutral-500">
-              <li><a href="#" className="hover:text-neutral-900 transition-colors">Help Center</a></li>
-              <li><a href="#" className="hover:text-neutral-900 transition-colors">Track Your Order</a></li>
-              <li><a href="#" className="hover:text-neutral-900 transition-colors">Delivery & Shipping</a></li>
-              <li><a href="#" className="hover:text-neutral-900 transition-colors">Returns & Refunds</a></li>
+              <li><Link to="/faq" className="hover:text-neutral-900 transition-colors">Help & FAQ</Link></li>
+              <li><Link to="/contact" className="hover:text-neutral-900 transition-colors">Contact Us</Link></li>
+              <li><Link to="/profile" className="hover:text-neutral-900 transition-colors">Track Your Order</Link></li>
+              <li><Link to="/faq" className="hover:text-neutral-900 transition-colors">Returns & Refunds</Link></li>
             </ul>
           </div>
 
           <div>
-            <h5 className="text-xs font-semibold text-neutral-900 uppercase tracking-wider mb-4">Ecosystem</h5>
+            <h5 className="text-xs font-semibold text-neutral-900 uppercase tracking-wider mb-4">Company</h5>
             <ul className="space-y-2 text-xs text-neutral-500">
-              <li><a href="#" className="hover:text-neutral-900 transition-colors">Google Assistant</a></li>
-              <li><a href="#" className="hover:text-neutral-900 transition-colors">Fitbit Integration</a></li>
-              <li><a href="#" className="hover:text-neutral-900 transition-colors">Android Ecosystem</a></li>
-              <li><a href="#" className="hover:text-neutral-900 transition-colors">Sustainability</a></li>
+              <li><Link to="/about" className="hover:text-neutral-900 transition-colors">About Us</Link></li>
+              <li><Link to="/about" className="hover:text-neutral-900 transition-colors">Our Vision</Link></li>
+              <li><Link to="/contact" className="hover:text-neutral-900 transition-colors">Support Specialists</Link></li>
+              <li><Link to="/faq" className="hover:text-neutral-900 transition-colors">Security Details</Link></li>
             </ul>
           </div>
 
@@ -131,9 +131,9 @@ export default function Footer() {
             <span>&copy; {new Date().getFullYear()} PixelMart. Built exactly as designed in Google Stitch. All rights reserved.</span>
           </div>
           <div className="flex space-x-6">
-            <a href="#" className="hover:text-neutral-600 transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-neutral-600 transition-colors">Terms of Service</a>
-            <a href="#" className="hover:text-neutral-600 transition-colors">Cookie Preferences</a>
+            <Link to="/privacy" className="hover:text-neutral-600 transition-colors">Privacy Policy</Link>
+            <Link to="/terms" className="hover:text-neutral-600 transition-colors">Terms of Service</Link>
+            <Link to="/faq" className="hover:text-neutral-600 transition-colors">FAQ & Support</Link>
           </div>
         </div>
       </div>

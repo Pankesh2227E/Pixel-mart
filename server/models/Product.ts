@@ -15,6 +15,7 @@ export interface IProduct {
   highlights: string[];
   isNew?: boolean;
   isBestSeller?: boolean;
+  stock?: number;
 }
 
 const ProductSchema = new Schema<IProduct>(
@@ -33,6 +34,7 @@ const ProductSchema = new Schema<IProduct>(
     highlights: [{ type: String }],
     isNew: { type: Boolean, default: false },
     isBestSeller: { type: Boolean, default: false },
+    stock: { type: Number, default: 15 },
   },
   { timestamps: true }
 );

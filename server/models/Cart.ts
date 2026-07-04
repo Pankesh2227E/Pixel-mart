@@ -17,6 +17,14 @@ export interface ICart {
   userId?: string;
   sessionId?: string;
   items: ICartItem[];
+  shippingAddress?: {
+    fullName: string;
+    email: string;
+    address: string;
+    city: string;
+    postalCode: string;
+    country: string;
+  };
 }
 
 const CartItemSchema = new Schema({
@@ -37,6 +45,14 @@ const CartSchema = new Schema<ICart>(
     userId: { type: String, index: true },
     sessionId: { type: String, index: true },
     items: [CartItemSchema],
+    shippingAddress: {
+      fullName: { type: String },
+      email: { type: String },
+      address: { type: String },
+      city: { type: String },
+      postalCode: { type: String },
+      country: { type: String },
+    },
   },
   { timestamps: true }
 );

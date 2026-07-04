@@ -5,10 +5,11 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Star, ArrowUpRight, ShoppingCart } from 'lucide-react';
+import { Star, ArrowUpRight, ShoppingCart, Heart } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Product } from '../types';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 
 interface ProductCardProps {
   product: Product;
@@ -17,6 +18,9 @@ interface ProductCardProps {
 
 export default function ProductCard({ product }: ProductCardProps) {
   const { addToCart } = useCart();
+  const { wishlist, toggleWishlist } = useAuth();
+
+  const isWishlisted = wishlist.includes(product.id);
 
   const handleQuickAdd = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -50,9 +54,22 @@ export default function ProductCard({ product }: ProductCardProps) {
         )}
       </div>
 
+      {/* Floating Action / Wishlist Heart Icon */}
+      <button
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          toggleWishlist(product.id);
+        }}
+        className="absolute top-4 right-4 z-10 p-1.5 rounded-full bg-white/95 border border-neutral-100 shadow-sm text-neutral-800 hover:scale-110 active:scale-95 transition-all"
+        title={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+      >
+        <Heart className={`h-3.5 w-3.5 transition-colors ${isWishlisted ? 'fill-red-500 text-red-500' : 'text-neutral-500 hover:text-red-500'}`} />
+      </button>
+
       {/* Floating Action / Arrow Icon */}
-      <div className="absolute top-4 right-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-        <div className="p-1.5 rounded-full bg-neutral-50 border border-neutral-100 text-neutral-800">
+      <div className="absolute top-14 right-4 z-10 opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none">
+        <div className="p-1.5 rounded-full bg-neutral-50 border border-neutral-100 text-neutral-800 shadow-sm">
           <ArrowUpRight className="h-3.5 w-3.5" />
         </div>
       </div>

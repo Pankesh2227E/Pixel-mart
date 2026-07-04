@@ -4,32 +4,113 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { CheckCircle2, Home, ArrowRight, ShieldCheck, Mail, Calendar, CreditCard, Box, Truck } from 'lucide-react';
 import { motion } from 'motion/react';
 import { OrderDetails } from '../types';
 
 export default function Success() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [order, setOrder] = useState<OrderDetails | null>(null);
   const [activeStep, setActiveStep] = useState<number>(0);
+  const [isVerifying, setIsVerifying] = useState<boolean>(false);
+  const [verificationError, setVerificationError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Read the stored order
-    const saved = localStorage.getItem('pixelmart_last_order');
-    if (saved) {
-      setOrder(JSON.parse(saved));
+    const params = new URLSearchParams(location.search);
+    const orderIdParam = params.get('order_id');
+
+    if (orderIdParam) {
+      setIsVerifying(true);
+      setVerificationError(null);
+
+      // Verify payment with the server securely
+      fetch('/api/orders/cashfree-verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ orderId: orderIdParam })
+      })
+        .then((res) => {
+          if (!res.ok) {
+            throw new Error('Verification request failed');
+          }
+          return res.json();
+        })
+        .then((data) => {
+          if (data.success) {
+            setOrder(data.order);
+            localStorage.setItem('pixelmart_last_order', JSON.stringify(data.order));
+          } else {
+            setVerificationError('Your Cashfree transaction could not be verified securely. Please verify your payment details or contact support.');
+          }
+          setIsVerifying(false);
+        })
+        .catch((err) => {
+          console.error('Error verifying order payment status:', err);
+          setVerificationError('An error occurred while communicating with the verification API. Please reload to retry.');
+          setIsVerifying(false);
+        });
+    } else {
+      // Read the cached order from local storage
+      const saved = localStorage.getItem('pixelmart_last_order');
+      if (saved) {
+        setOrder(JSON.parse(saved));
+      }
     }
 
-    // Advance the order status timeline simulation over time for pure interactivity
-    const timer1 = setTimeout(() => setActiveStep(1), 3500); // Shift to 'processing'
-    const timer2 = setTimeout(() => setActiveStep(2), 8500); // Shift to 'dispatched'
+    // Advance order status timeline simulation
+    const timer1 = setTimeout(() => setActiveStep(1), 3500);
+    const timer2 = setTimeout(() => setActiveStep(2), 8500);
 
     return () => {
       clearTimeout(timer1);
       clearTimeout(timer2);
     };
-  }, []);
+  }, [location.search]);
+
+  if (isVerifying) {
+    return (
+      <div id="success-verifying-root" className="min-h-screen bg-neutral-50/50 flex flex-col items-center justify-center py-20 px-4">
+        <div className="text-center space-y-4 max-w-md">
+          <div className="relative flex justify-center">
+            <div className="h-16 w-16 rounded-full border-4 border-neutral-200 border-t-neutral-900 animate-spin" />
+            <ShieldCheck className="h-6 w-6 text-neutral-900 absolute top-5" />
+          </div>
+          <h2 className="text-lg font-bold text-neutral-900">Verifying Payment Securely</h2>
+          <p className="text-xs text-neutral-500">
+            Please wait while we establish a secure connection with Cashfree to finalize your transaction details...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (verificationError) {
+    return (
+      <div id="success-error-root" className="min-h-screen bg-neutral-50/50 flex flex-col items-center justify-center py-20 px-4">
+        <div className="bg-white border border-rose-100 p-8 rounded-2xl shadow-sm text-center space-y-5 max-w-md">
+          <div className="inline-flex p-3 rounded-full bg-rose-50 text-rose-600">
+            <CheckCircle2 className="h-10 w-10 rotate-45 text-rose-500" />
+          </div>
+          <h2 className="text-lg font-bold text-neutral-900">Payment Verification Failed</h2>
+          <p className="text-xs text-rose-600 font-medium">
+            {verificationError}
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 pt-2 justify-center">
+            <Link to="/checkout" className="inline-flex items-center justify-center px-4 py-2 text-xs font-semibold text-white bg-neutral-900 rounded-full hover:bg-neutral-800 transition-colors">
+              Go back to Checkout
+            </Link>
+            <Link to="/" className="inline-flex items-center justify-center px-4 py-2 text-xs font-semibold text-neutral-600 bg-neutral-100 rounded-full hover:bg-neutral-200 transition-colors">
+              Return to Store
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!order) {
     return (

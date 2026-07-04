@@ -10,61 +10,93 @@ import { useCart } from '../context/CartContext';
 import { OrderDetails } from '../types';
 
 export default function Checkout() {
-  const { cart, cartTotal, clearCart } = useCart();
+  const { cart, cartTotal, clearCart, shippingAddress, saveShippingAddress } = useCart();
   const navigate = useNavigate();
 
   // Address States
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [address, setAddress] = useState('');
-  const [city, setCity] = useState('');
-  const [postalCode, setPostalCode] = useState('');
-  const [country, setCountry] = useState('United States');
+  const [fullName, setFullName] = useState(shippingAddress?.fullName || '');
+  const [email, setEmail] = useState(shippingAddress?.email || '');
+  const [address, setAddress] = useState(shippingAddress?.address || '');
+  const [city, setCity] = useState(shippingAddress?.city || '');
+  const [postalCode, setPostalCode] = useState(shippingAddress?.postalCode || '');
+  const [country, setCountry] = useState(shippingAddress?.country || 'United States');
 
-  // Payment States
-  const [paymentMethod, setPaymentMethod] = useState('credit-card');
-  const [cardNumber, setCardNumber] = useState('');
-  const [cardExpiry, setCardExpiry] = useState('');
-  const [cardCvv, setCardCvv] = useState('');
+  // Synchronize local states if shippingAddress updates asynchronously (e.g. fetched from backend DB)
+  React.useEffect(() => {
+    if (shippingAddress) {
+      setFullName(prev => prev || shippingAddress.fullName || '');
+      setEmail(prev => prev || shippingAddress.email || '');
+      setAddress(prev => prev || shippingAddress.address || '');
+      setCity(prev => prev || shippingAddress.city || '');
+      setPostalCode(prev => prev || shippingAddress.postalCode || '');
+      setCountry(prev => prev || shippingAddress.country || 'United States');
+    }
+  }, [shippingAddress]);
+
+  // Persist local states to cart context/session storage on edit
+  React.useEffect(() => {
+    saveShippingAddress({
+      fullName,
+      email,
+      address,
+      city,
+      postalCode,
+      country,
+    });
+  }, [fullName, email, address, city, postalCode, country]);
 
   // UI States
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Coupon and Shipping States
+  const [shippingTier, setShippingTier] = useState<'standard' | 'express' | 'overnight'>('standard');
+  const [couponInput, setCouponInput] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
+  const [discountAmount, setDiscountAmount] = useState(0);
+  const [couponError, setCouponError] = useState('');
+  const [couponSuccess, setCouponSuccess] = useState('');
+
+  // Shipping cost lookup
+  const shippingCost = shippingTier === 'standard' ? 0 : shippingTier === 'express' ? 15 : 29;
+
   // Calculations
-  const tax = Math.round(cartTotal * 0.08); // 8% mock tax
-  const shipping = 0; // Free shipping
-  const total = cartTotal + tax + shipping;
+  const subtotalWithDiscount = Math.max(0, cartTotal - discountAmount);
+  const tax = Math.round(subtotalWithDiscount * 0.08); // 8% tax
+  const shipping = appliedCoupon === 'FREESHIP' ? 0 : shippingCost;
+  const total = subtotalWithDiscount + tax + shipping;
 
-  // Format Card Number (adds spaces every 4 digits)
-  const handleCardNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/\D/g, '');
-    if (value.length > 16) value = value.slice(0, 16);
+  const handleApplyCoupon = (e: React.FormEvent) => {
+    e.preventDefault();
+    setCouponError('');
+    setCouponSuccess('');
     
-    const parts = [];
-    for (let i = 0; i < value.length; i += 4) {
-      parts.push(value.slice(i, i + 4));
+    const code = couponInput.trim().toUpperCase();
+    if (!code) {
+      setCouponError('Please enter a coupon code.');
+      return;
     }
-    setCardNumber(parts.join(' '));
-  };
-
-  // Format Card Expiry (adds slash MM/YY)
-  const handleCardExpiryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/\D/g, '');
-    if (value.length > 4) value = value.slice(0, 4);
-
-    if (value.length > 2) {
-      setCardExpiry(`${value.slice(0, 2)}/${value.slice(2)}`);
+    
+    if (code === 'PIXEL10') {
+      const discount = Math.round(cartTotal * 0.10);
+      setDiscountAmount(discount);
+      setAppliedCoupon(code);
+      setCouponSuccess('Success! 10% discount has been applied.');
+    } else if (code === 'WELCOME50') {
+      if (cartTotal < 100) {
+        setCouponError('Requires a minimum purchase of $100.');
+        return;
+      }
+      setDiscountAmount(50);
+      setAppliedCoupon(code);
+      setCouponSuccess('Success! $50.00 discount has been applied.');
+    } else if (code === 'FREESHIP') {
+      setDiscountAmount(0);
+      setAppliedCoupon(code);
+      setCouponSuccess('Success! Free shipping code applied.');
     } else {
-      setCardExpiry(value);
+      setCouponError('Invalid code. Try PIXEL10, WELCOME50, or FREESHIP.');
     }
-  };
-
-  // Format CVV (limits to 3 digits)
-  const handleCvvChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/\D/g, '');
-    if (value.length > 3) value = value.slice(0, 3);
-    setCardCvv(value);
   };
 
   const validateForm = () => {
@@ -75,13 +107,6 @@ export default function Checkout() {
     if (!address.trim()) newErrors.address = 'Shipping Address is required';
     if (!city.trim()) newErrors.city = 'City is required';
     if (!postalCode.trim()) newErrors.postalCode = 'Postal Code is required';
-
-    if (paymentMethod === 'credit-card') {
-      const cleanCard = cardNumber.replace(/\s/g, '');
-      if (cleanCard.length !== 16) newErrors.cardNumber = 'Provide a valid 16-digit card';
-      if (!cardExpiry.includes('/') || cardExpiry.length !== 5) newErrors.cardExpiry = 'Format must be MM/YY';
-      if (cardCvv.length !== 3) newErrors.cardCvv = 'Provide a 3-digit CVV';
-    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -120,13 +145,13 @@ export default function Checkout() {
         postalCode,
         country,
       },
-      paymentMethod: paymentMethod === 'credit-card' ? 'Visa •••• ' + cardNumber.slice(-4) : 'Google Pay',
+      paymentMethod: 'Cashfree Online',
     };
 
     const token = localStorage.getItem('pixelmart_token');
 
     try {
-      const response = await fetch('/api/orders', {
+      const response = await fetch('/api/orders/cashfree-session', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -137,22 +162,49 @@ export default function Checkout() {
 
       if (response.ok) {
         const data = await response.json();
-        const finalOrder = data.order || {
-          id: `PM-${Math.floor(100000 + Math.random() * 900000)}`,
-          ...orderPayload,
-          date: new Date().toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-          }),
-          status: 'placed'
+        const finalOrder = data.order;
+        
+        // Dynamically load the Cashfree v3 JS SDK
+        const loadScript = (): Promise<any> => {
+          return new Promise((resolve) => {
+            if ((window as any).Cashfree) {
+              resolve((window as any).Cashfree);
+              return;
+            }
+            const script = document.createElement('script');
+            script.src = 'https://sdk.cashfree.com/js/v3/cashfree.js';
+            script.async = true;
+            script.onload = () => resolve((window as any).Cashfree);
+            document.body.appendChild(script);
+          });
         };
+
+        const CashfreeSDK = await loadScript();
+        const cashfree = CashfreeSDK({
+          mode: 'sandbox'
+        });
+
+        // Save order temporary cache
         localStorage.setItem('pixelmart_last_order', JSON.stringify(finalOrder));
+
+        if (data.isSimulated) {
+          console.log('⚡ Simulated mode: navigating directly to success page');
+          setIsSubmitting(false);
+          clearCart();
+          navigate(`/success?order_id=${data.order_id}&simulated=true`);
+          return;
+        }
+
+        // Trigger official Cashfree Checkout redirect
+        await cashfree.checkout({
+          paymentSessionId: data.payment_session_id,
+          redirectTarget: '_self'
+        });
       } else {
         throw new Error('API server returned error status');
       }
     } catch (err) {
-      console.warn('Backend connection issue or order creation failed. Falling back to local storage simulator.', err);
+      console.warn('Cashfree payment session initiation failed. Falling back to local storage simulator.', err);
       // Fallback
       const orderId = `PM-${Math.floor(100000 + Math.random() * 900000)}`;
       const fallbackOrder: OrderDetails = {
@@ -170,7 +222,7 @@ export default function Checkout() {
           postalCode,
           country,
         },
-        paymentMethod: paymentMethod === 'credit-card' ? 'Visa •••• ' + cardNumber.slice(-4) : 'Google Pay',
+        paymentMethod: 'Cashfree Online',
         date: new Date().toLocaleDateString('en-US', {
           year: 'numeric',
           month: 'long',
@@ -179,18 +231,10 @@ export default function Checkout() {
         status: 'placed',
       };
       localStorage.setItem('pixelmart_last_order', JSON.stringify(fallbackOrder));
-    } finally {
       setIsSubmitting(false);
       clearCart();
       navigate('/success');
     }
-  };
-
-  // Detect card issuer
-  const getCardType = () => {
-    if (cardNumber.startsWith('4')) return 'Visa';
-    if (cardNumber.startsWith('5')) return 'Mastercard';
-    return 'Credit Card';
   };
 
   if (cart.length === 0) {
@@ -310,127 +354,64 @@ export default function Checkout() {
               </div>
             </div>
 
-            {/* 2. Payment Method Info */}
+            {/* 2. Shipping Speed selector */}
             <div className="bg-white border border-neutral-100 p-6 rounded-2xl shadow-sm space-y-4">
               <h2 className="text-sm font-bold text-neutral-900 border-b border-neutral-50 pb-3 flex items-center space-x-2">
                 <span className="h-5 w-5 rounded-full bg-neutral-900 text-[10px] font-bold text-white flex items-center justify-center font-mono">2</span>
-                <span>Payment Information</span>
+                <span>Select Shipping Delivery Speed</span>
               </h2>
+              <div className="space-y-3">
+                <label className="flex items-center justify-between p-3.5 border rounded-xl bg-neutral-50 cursor-pointer hover:bg-neutral-100/50 transition-all">
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="radio"
+                      name="shippingTier"
+                      checked={shippingTier === 'standard'}
+                      onChange={() => setShippingTier('standard')}
+                      className="text-neutral-900 focus:ring-neutral-950"
+                    />
+                    <div>
+                      <div className="text-xs font-semibold text-neutral-950">Standard Delivery</div>
+                      <div className="text-[10px] text-neutral-500">Delivered within 3-5 business days.</div>
+                    </div>
+                  </div>
+                  <span className="text-xs font-bold text-emerald-600">Complimentary</span>
+                </label>
 
-              {/* Express selector tabs */}
-              <div className="grid grid-cols-2 gap-3 p-1 bg-neutral-50 rounded-xl border border-neutral-100">
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('credit-card')}
-                  className={`py-2 text-xs font-semibold rounded-lg flex items-center justify-center space-x-2 transition-all ${
-                    paymentMethod === 'credit-card'
-                      ? 'bg-white text-neutral-950 shadow-sm border border-neutral-200/40'
-                      : 'text-neutral-500 hover:text-neutral-900'
-                  }`}
-                >
-                  <CreditCard className="h-3.5 w-3.5" />
-                  <span>Debit / Credit Card</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('google-pay')}
-                  className={`py-2 text-xs font-semibold rounded-lg flex items-center justify-center space-x-2 transition-all ${
-                    paymentMethod === 'google-pay'
-                      ? 'bg-white text-neutral-950 shadow-sm border border-neutral-200/40'
-                      : 'text-neutral-500 hover:text-neutral-900'
-                  }`}
-                >
-                  <span className="font-sans font-bold italic tracking-tighter text-neutral-800">
-                    <span className="text-blue-600">G</span>
-                    <span className="text-red-500">o</span>
-                    <span className="text-yellow-500">o</span>
-                    <span className="text-blue-500">g</span>
-                    <span className="text-green-500">l</span>
-                    <span className="text-red-500">e</span> Pay
-                  </span>
-                </button>
+                <label className="flex items-center justify-between p-3.5 border rounded-xl bg-neutral-50 cursor-pointer hover:bg-neutral-100/50 transition-all">
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="radio"
+                      name="shippingTier"
+                      checked={shippingTier === 'express'}
+                      onChange={() => setShippingTier('express')}
+                      className="text-neutral-900 focus:ring-neutral-950"
+                    />
+                    <div>
+                      <div className="text-xs font-semibold text-neutral-950">Express Shipping</div>
+                      <div className="text-[10px] text-neutral-500">Delivered within 1-2 business days. Fully tracked.</div>
+                    </div>
+                  </div>
+                  <span className="text-xs font-bold text-neutral-800">+$15.00</span>
+                </label>
+
+                <label className="flex items-center justify-between p-3.5 border rounded-xl bg-neutral-50 cursor-pointer hover:bg-neutral-100/50 transition-all">
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="radio"
+                      name="shippingTier"
+                      checked={shippingTier === 'overnight'}
+                      onChange={() => setShippingTier('overnight')}
+                      className="text-neutral-900 focus:ring-neutral-950"
+                    />
+                    <div>
+                      <div className="text-xs font-semibold text-neutral-950">Overnight Dispatch</div>
+                      <div className="text-[10px] text-neutral-500">Next-day guaranteed delivery. Priority handling.</div>
+                    </div>
+                  </div>
+                  <span className="text-xs font-bold text-neutral-800">+$29.00</span>
+                </label>
               </div>
-
-              {/* Payment details */}
-              {paymentMethod === 'credit-card' ? (
-                <div className="space-y-4 pt-2">
-                  <div className="p-4 bg-neutral-50 rounded-xl border border-neutral-150 relative overflow-hidden flex flex-col justify-between h-36 max-w-sm mx-auto shadow-sm">
-                    <div className="flex justify-between items-start">
-                      <span className="text-[10px] font-mono font-bold tracking-widest uppercase text-neutral-400">PixelMart Card</span>
-                      <span className="text-[11px] font-bold text-neutral-700 italic font-sans">{getCardType()}</span>
-                    </div>
-                    <div className="text-sm font-mono tracking-widest text-neutral-800 my-2">
-                      {cardNumber || '•••• •••• •••• ••••'}
-                    </div>
-                    <div className="flex justify-between items-end">
-                      <div>
-                        <span className="text-[8px] uppercase tracking-wider text-neutral-400 font-mono">Cardholder</span>
-                        <div className="text-[10px] font-semibold text-neutral-700 font-sans truncate max-w-[160px]">{fullName || 'Julian Vance'}</div>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-[8px] uppercase tracking-wider text-neutral-400 font-mono">Expiry</span>
-                        <div className="text-[10px] font-semibold text-neutral-700 font-mono">{cardExpiry || 'MM/YY'}</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Card inputs */}
-                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 pt-2">
-                    <div className="space-y-1.5 sm:col-span-2">
-                      <label htmlFor="cardnumber" className="block text-[10px] font-semibold text-neutral-500 uppercase tracking-wider">Card Number</label>
-                      <input
-                        id="cardnumber"
-                        type="text"
-                        placeholder="4111 2222 3333 4444"
-                        value={cardNumber}
-                        onChange={handleCardNumberChange}
-                        className={`w-full px-3 py-2 text-xs bg-neutral-50 border rounded-lg text-neutral-800 placeholder-neutral-400 focus:outline-none focus:ring-1 focus:ring-neutral-400 ${
-                          errors.cardNumber ? 'border-rose-400 focus:ring-rose-400' : 'border-neutral-200'
-                        }`}
-                      />
-                      {errors.cardNumber && <p className="text-[10px] text-rose-500 font-medium">{errors.cardNumber}</p>}
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label htmlFor="expiry" className="block text-[10px] font-semibold text-neutral-500 uppercase tracking-wider">Expiry (MM/YY)</label>
-                      <input
-                        id="expiry"
-                        type="text"
-                        placeholder="12/28"
-                        value={cardExpiry}
-                        onChange={handleCardExpiryChange}
-                        className={`w-full px-3 py-2 text-xs bg-neutral-50 border rounded-lg text-neutral-800 placeholder-neutral-400 focus:outline-none focus:ring-1 focus:ring-neutral-400 ${
-                          errors.cardExpiry ? 'border-rose-400 focus:ring-rose-400' : 'border-neutral-200'
-                        }`}
-                      />
-                      {errors.cardExpiry && <p className="text-[10px] text-rose-500 font-medium">{errors.cardExpiry}</p>}
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label htmlFor="cvv" className="block text-[10px] font-semibold text-neutral-500 uppercase tracking-wider">CVV Code</label>
-                      <input
-                        id="cvv"
-                        type="password"
-                        placeholder="***"
-                        value={cardCvv}
-                        onChange={handleCvvChange}
-                        className={`w-full px-3 py-2 text-xs bg-neutral-50 border rounded-lg text-neutral-800 placeholder-neutral-400 focus:outline-none focus:ring-1 focus:ring-neutral-400 ${
-                          errors.cardCvv ? 'border-rose-400 focus:ring-rose-400' : 'border-neutral-200'
-                        }`}
-                      />
-                      {errors.cardCvv && <p className="text-[10px] text-rose-500 font-medium">{errors.cardCvv}</p>}
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="p-8 text-center bg-neutral-50 rounded-xl border border-neutral-100 space-y-3">
-                  <div className="inline-flex p-3 rounded-full bg-white border border-neutral-100 text-emerald-600 shadow-sm">
-                    <CheckCircle className="h-5 w-5" />
-                  </div>
-                  <h4 className="text-xs font-semibold text-neutral-900">Google Pay Express Setup</h4>
-                  <p className="text-[10px] text-neutral-500 max-w-xs mx-auto">We will retrieve your saved credit cards and shipping details directly from Google. No forms required.</p>
-                </div>
-              )}
             </div>
 
           </div>
@@ -462,19 +443,51 @@ export default function Checkout() {
               ))}
             </div>
 
+            {/* Promo Code Validation Form */}
+            <div className="border-t border-neutral-100 pt-4">
+              <div className="text-xs font-semibold text-neutral-800 mb-2">Promotional / Gift Code</div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="e.g. PIXEL10"
+                  value={couponInput}
+                  onChange={(e) => setCouponInput(e.target.value)}
+                  className="flex-grow px-3 py-1.5 text-xs bg-neutral-50 border border-neutral-205 rounded-xl focus:outline-none focus:ring-1 focus:ring-neutral-900 text-neutral-800"
+                />
+                <button
+                  type="button"
+                  onClick={handleApplyCoupon}
+                  className="px-4 py-1.5 text-xs font-semibold text-white bg-neutral-900 hover:bg-neutral-850 rounded-xl transition-all cursor-pointer"
+                >
+                  Apply
+                </button>
+              </div>
+              {couponError && <p className="text-[10px] text-red-500 font-semibold mt-1.5">{couponError}</p>}
+              {couponSuccess && <p className="text-[10px] text-emerald-600 font-semibold mt-1.5">{couponSuccess}</p>}
+              <p className="text-[9px] text-neutral-400 mt-1">Codes: PIXEL10 (10% off), WELCOME50 ($50 off), FREESHIP (Free shipping)</p>
+            </div>
+
             {/* Price breakdown */}
             <div className="space-y-2 border-t border-neutral-100 pt-4 text-xs">
               <div className="flex justify-between text-neutral-500">
                 <span>Subtotal</span>
                 <span className="text-neutral-800 font-medium">${cartTotal}</span>
               </div>
+              {appliedCoupon && discountAmount > 0 && (
+                <div className="flex justify-between text-emerald-600 font-semibold">
+                  <span>Discount ({appliedCoupon})</span>
+                  <span>-${discountAmount}</span>
+                </div>
+              )}
+              <div className="flex justify-between text-neutral-500">
+                <span>Shipping ({shippingTier === 'standard' ? 'Standard' : shippingTier === 'express' ? 'Express' : 'Overnight'})</span>
+                <span className="text-neutral-800 font-medium">
+                  {shipping === 0 ? 'Free' : `$${shipping}`}
+                </span>
+              </div>
               <div className="flex justify-between text-neutral-500">
                 <span>Estimated Tax (8%)</span>
                 <span className="text-neutral-800 font-medium">${tax}</span>
-              </div>
-              <div className="flex justify-between text-neutral-500">
-                <span>Complimentary Shipping</span>
-                <span className="text-emerald-600 font-semibold">Free</span>
               </div>
               <div className="flex justify-between text-sm font-bold text-neutral-900 border-t border-neutral-100 pt-3">
                 <span>Order Total</span>
@@ -501,7 +514,7 @@ export default function Checkout() {
               }`}
             >
               <ShieldCheck className="h-4 w-4" />
-              <span>{isSubmitting ? 'Authorizing Transactions...' : `Authorize & Pay $${total}`}</span>
+              <span>{isSubmitting ? 'Redirecting to Payment Gateway...' : `Proceed to Payment • $${total}`}</span>
             </button>
           </div>
 

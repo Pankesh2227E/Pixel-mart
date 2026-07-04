@@ -7,6 +7,7 @@ import { createServer as createViteServer } from 'vite';
 dotenv.config();
 
 import { connectDB, getIsConnected } from './server/db';
+import { validateEnvironment } from './server/lib/env-validator';
 import ProductModel from './server/models/Product';
 import { seedDatabase } from './server/routes/seed';
 
@@ -16,18 +17,33 @@ import userRoutes from './server/routes/users';
 import orderRoutes from './server/routes/orders';
 import cartRoutes from './server/routes/cart';
 import seedRoutes from './server/routes/seed';
+import reviewRoutes from './server/routes/reviews';
+import contactRoutes from './server/routes/contact';
+import uploadRoutes from './server/routes/upload';
 import { errorHandler } from './server/middleware/error';
+import { promoteToAdmin } from './server/admin-init';
 
 async function startServer() {
+  // Validate system environment variables
+  validateEnvironment();
+
   const app = express();
   const PORT = 3000;
 
-  // Use JSON parsing middleware
-  app.use(express.json());
+  // Use JSON parsing middleware with high limit for Base64 image uploads
+  app.use(express.json({ limit: '15mb' }));
+  app.use(express.urlencoded({ limit: '15mb', extended: true }));
 
   // Connect to MongoDB Atlas
   console.log('🔄 Initializing database connection...');
   const dbConnected = await connectDB();
+
+  // Securely boot/promote the first admin user
+  const defaultAdmin = 'pankesh2008@gmail.com';
+  await promoteToAdmin(defaultAdmin);
+  if (process.env.INITIAL_ADMIN_EMAIL && process.env.INITIAL_ADMIN_EMAIL.toLowerCase() !== defaultAdmin) {
+    await promoteToAdmin(process.env.INITIAL_ADMIN_EMAIL);
+  }
 
   // If connected, check if we need to auto-seed the products catalog
   if (dbConnected) {
@@ -52,7 +68,10 @@ async function startServer() {
   app.use('/api/users', userRoutes);
   app.use('/api/orders', orderRoutes);
   app.use('/api/cart', cartRoutes);
+  app.use('/api/reviews', reviewRoutes);
   app.use('/api/seed', seedRoutes);
+  app.use('/api/contact', contactRoutes);
+  app.use('/api/upload', uploadRoutes);
 
   // Simple Health Check
   app.get('/api/health', (req, res) => {

@@ -49,7 +49,7 @@ router.get('/', async (req: AuthRequest, res: Response) => {
 // POST /api/cart - Sync entire cart
 router.post('/', async (req: AuthRequest, res: Response) => {
   const userId = req.user?.id || req.body.userId;
-  const { sessionId, items } = req.body;
+  const { sessionId, items, shippingAddress } = req.body;
 
   const dbConnected = getIsConnected();
   if (!dbConnected) {
@@ -71,12 +71,16 @@ router.post('/', async (req: AuthRequest, res: Response) => {
     let cart = await CartModel.findOne(query);
     if (cart) {
       cart.items = items;
+      if (shippingAddress) {
+        cart.shippingAddress = shippingAddress;
+      }
       await cart.save();
     } else {
       cart = new CartModel({
         userId,
         sessionId,
-        items
+        items,
+        shippingAddress
       });
       await cart.save();
     }

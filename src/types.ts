@@ -18,6 +18,7 @@ export interface Product {
   highlights: string[];
   isNew?: boolean;
   isBestSeller?: boolean;
+  stock?: number;
 }
 
 export interface CartItem {

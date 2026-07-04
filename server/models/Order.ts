@@ -30,6 +30,9 @@ export interface IOrder {
   paymentMethod: string;
   date: string;
   status: 'placed' | 'processing' | 'dispatched' | 'delivered';
+  cashfreeOrderId?: string;
+  cashfreePaymentSessionId?: string;
+  paymentStatus?: 'pending' | 'paid' | 'failed' | 'cancelled';
 }
 
 const OrderSchema = new Schema<IOrder>(
@@ -68,6 +71,13 @@ const OrderSchema = new Schema<IOrder>(
       type: String,
       enum: ['placed', 'processing', 'dispatched', 'delivered'],
       default: 'placed',
+    },
+    cashfreeOrderId: { type: String },
+    cashfreePaymentSessionId: { type: String },
+    paymentStatus: {
+      type: String,
+      enum: ['pending', 'paid', 'failed', 'cancelled'],
+      default: 'pending'
     },
   },
   { timestamps: true }

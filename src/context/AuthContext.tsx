@@ -11,10 +11,12 @@ interface AuthContextType {
   token: string | null;
   loading: boolean;
   error: string | null;
+  wishlist: string[];
   login: (email: string, password: string) => Promise<boolean>;
   register: (name: string, email: string, password: string) => Promise<boolean>;
   logout: () => void;
   clearError: () => void;
+  toggleWishlist: (productId: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,6 +28,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [wishlist, setWishlist] = useState<string[]>([]);
+
+  // Load wishlist when token or user session changes
+  useEffect(() => {
+    const fetchWishlist = async () => {
+      if (!token) {
+        // Load offline wishlist from localStorage
+        const stored = localStorage.getItem('pixelmart_guest_wishlist');
+        setWishlist(stored ? JSON.parse(stored) : []);
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/users/wishlist', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setWishlist(data);
+        }
+      } catch (err) {
+        console.error('Failed to load wishlist:', err);
+      }
+    };
+
+    fetchWishlist();
+  }, [token]);
 
   // Validate/Load user profile on mount or token change
   useEffect(() => {
@@ -148,10 +179,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(null);
     setUser(null);
     setError(null);
+    setWishlist([]);
   };
 
   const clearError = () => {
     setError(null);
+  };
+
+  const toggleWishlist = async (productId: string): Promise<void> => {
+    if (!token) {
+      // Guest mode - toggle in localStorage
+      setWishlist((prev) => {
+        const updated = prev.includes(productId)
+          ? prev.filter((id) => id !== productId)
+          : [...prev, productId];
+        localStorage.setItem('pixelmart_guest_wishlist', JSON.stringify(updated));
+        return updated;
+      });
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/users/wishlist', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ productId }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setWishlist(data);
+      }
+    } catch (err) {
+      console.error('Failed to toggle wishlist:', err);
+    }
   };
 
   return (
@@ -161,10 +224,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         token,
         loading,
         error,
+        wishlist,
         login,
         register,
         logout,
         clearError,
+        toggleWishlist,
       }}
     >
       {children}

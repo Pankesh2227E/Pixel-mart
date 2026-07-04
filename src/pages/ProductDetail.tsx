@@ -5,16 +5,20 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Star, ChevronRight, Plus, Minus, ShieldCheck, ArrowLeft, Package, Sparkles } from 'lucide-react';
+import { Star, ChevronRight, Plus, Minus, ShieldCheck, ArrowLeft, Package, Sparkles, Trash2, Edit, MessageSquare, AlertCircle, CheckCircle } from 'lucide-react';
 import { motion } from 'motion/react';
 import { PRODUCTS } from '../data/products';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
+import { useToast } from '../components/Toast';
 import ProductCard from '../components/ProductCard';
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { addToCart } = useCart();
+  const { user, token } = useAuth();
+  const toast = useToast();
 
   const [product, setProduct] = useState<any>(() => PRODUCTS.find((p) => p.id === id));
 
@@ -23,6 +27,47 @@ export default function ProductDetail() {
   const [selectedOption, setSelectedOption] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<'overview' | 'specs' | 'box'>('overview');
+  const [activeImage, setActiveImage] = useState('');
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [ratingInput, setRatingInput] = useState(5);
+  const [commentInput, setCommentInput] = useState('');
+  const [reviewError, setReviewError] = useState('');
+  const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
+  const [editingComment, setEditingComment] = useState('');
+  const [editingRating, setEditingRating] = useState(5);
+
+  const fetchReviews = async () => {
+    try {
+      const res = await fetch(`/api/reviews/${id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setReviews(data);
+      }
+    } catch (err) {
+      console.error('Failed to load reviews:', err);
+    }
+  };
+
+  // Helper to get multiple product images dynamically
+  const getProductImages = (prod: any) => {
+    if (!prod) return [];
+    if (prod.images && prod.images.length > 0) return prod.images;
+    const list = [prod.image];
+    if (prod.category?.toLowerCase() === 'phones') {
+      list.push('https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&q=80&w=800');
+      list.push('https://images.unsplash.com/photo-1565849906461-09657302a61e?auto=format&fit=crop&q=80&w=800');
+    } else if (prod.category?.toLowerCase() === 'wearables') {
+      list.push('https://images.unsplash.com/photo-1517502884422-41eaaced0168?auto=format&fit=crop&q=80&w=800');
+      list.push('https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=800');
+    } else if (prod.category?.toLowerCase() === 'audio') {
+      list.push('https://images.unsplash.com/photo-1484704849700-f032a568e944?auto=format&fit=crop&q=80&w=800');
+      list.push('https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&q=80&w=800');
+    } else {
+      list.push('https://images.unsplash.com/photo-1611532736597-de2d4265fba3?auto=format&fit=crop&q=80&w=800');
+      list.push('https://images.unsplash.com/photo-1583394838336-acd977736f90?auto=format&fit=crop&q=80&w=800');
+    }
+    return list;
+  };
 
   // Load single product from backend API on ID change
   useEffect(() => {
@@ -33,19 +78,33 @@ export default function ProductDetail() {
         if (response.ok) {
           const data = await response.json();
           setProduct(data);
+          setActiveImage(data.image);
         }
       } catch (err) {
         console.warn('Backend API connection unavailable for single product detail, falling back to local dataset.', err);
       }
     };
     loadSingleProduct();
+    fetchReviews();
   }, [id]);
+
+  // Update page title and description metadata for SEO optimization
+  useEffect(() => {
+    if (product) {
+      document.title = `${product.name} | PixelMart Premium Devices`;
+      const metaDesc = document.querySelector('meta[name="description"]');
+      if (metaDesc) {
+        metaDesc.setAttribute('content', `Buy the authentic Google ${product.name} at PixelMart. Price: $${product.price}. Specifications: ${Object.entries(product.specs || {}).slice(0, 3).map(([k, v]) => `${k} (${v})`).join(', ')}.`);
+      }
+    }
+  }, [product]);
 
   // Reset page position and selection options on product id change
   useEffect(() => {
     if (product) {
       window.scrollTo(0, 0);
       setSelectedColor(product.colors[0]);
+      setActiveImage(product.image);
       
       const defaultOption = product.storages
         ? product.storages[0]
@@ -75,7 +134,100 @@ export default function ProductDetail() {
   ).slice(0, 3);
 
   const handleAddToCart = () => {
+    const stock = product.stock !== undefined ? product.stock : 15;
+    if (stock <= 0) {
+      toast.error('Sorry, this device is currently out of stock.');
+      return;
+    }
+    if (quantity > stock) {
+      toast.error(`Sorry, only ${stock} units are available in stock.`);
+      return;
+    }
     addToCart(product, quantity, selectedColor, selectedOption);
+    toast.success(`${product.name} added to cart!`);
+  };
+
+  const handlePostReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setReviewError('');
+    if (!token) {
+      setReviewError('You must be signed in to leave a review.');
+      return;
+    }
+    if (!commentInput.trim()) {
+      setReviewError('Review comment cannot be empty.');
+      return;
+    }
+    try {
+      const res = await fetch('/api/reviews', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          productId: id,
+          rating: ratingInput,
+          comment: commentInput
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setCommentInput('');
+        setRatingInput(5);
+        fetchReviews();
+      } else {
+        setReviewError(data.message || 'Failed to submit review');
+      }
+    } catch (err) {
+      setReviewError('Connection error. Please try again later.');
+    }
+  };
+
+  const handleEditReview = async (reviewId: string) => {
+    try {
+      const res = await fetch(`/api/reviews/${reviewId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          productId: id,
+          rating: editingRating,
+          comment: editingComment
+        })
+      });
+      if (res.ok) {
+        setEditingReviewId(null);
+        fetchReviews();
+      } else {
+        const data = await res.json();
+        alert(data.message || 'Failed to edit review');
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDeleteReview = async (reviewId: string) => {
+    if (!window.confirm('Are you sure you want to delete this review?')) return;
+    try {
+      const res = await fetch(`/api/reviews/${reviewId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (res.ok) {
+        fetchReviews();
+      } else {
+        const data = await res.json();
+        alert(data.message || 'Failed to delete review');
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   // Color bubble hex color mappings
@@ -109,14 +261,31 @@ export default function ProductDetail() {
           <div className="space-y-4">
             <div className="aspect-square bg-neutral-50 border border-neutral-100 rounded-3xl overflow-hidden flex items-center justify-center relative">
               <img
-                src={product.image}
+                src={activeImage || product.image}
                 alt={product.name}
-                className="h-full w-full object-cover"
+                className="h-full w-full object-cover transition-all duration-300"
                 referrerPolicy="no-referrer"
               />
               <span className="absolute bottom-4 right-4 inline-flex items-center px-2 py-0.5 text-[9px] font-bold text-neutral-500 bg-white/80 backdrop-blur-sm rounded-full border border-neutral-150 shadow-xs font-mono">
                 100% AUTHENTIC
               </span>
+            </div>
+
+            {/* Thumbnail selector */}
+            <div className="flex gap-2.5 overflow-x-auto py-1">
+              {getProductImages(product).map((imgUrl, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setActiveImage(imgUrl)}
+                  className={`relative h-16 w-16 rounded-xl border-2 overflow-hidden flex-shrink-0 bg-neutral-50 transition-all ${
+                    (activeImage || product.image) === imgUrl
+                      ? 'border-neutral-900 ring-2 ring-neutral-200'
+                      : 'border-neutral-200/80 hover:border-neutral-400'
+                  }`}
+                >
+                  <img src={imgUrl} alt={`${product.name} thumbnail ${idx + 1}`} className="h-full w-full object-cover" referrerPolicy="no-referrer" />
+                </button>
+              ))}
             </div>
             
             {/* Trust Banner under Image */}
@@ -156,8 +325,24 @@ export default function ProductDetail() {
                 <span className="text-[9px] font-semibold text-neutral-400 uppercase tracking-wider">Purchase Price</span>
                 <div className="text-2xl font-extrabold text-neutral-900 mt-0.5">${product.price}</div>
               </div>
-              <div className="text-[10px] text-emerald-600 font-semibold bg-emerald-50 border border-emerald-100 px-2.5 py-1 rounded-full">
-                Free Expedited Shipping
+              <div className="flex flex-col items-end gap-1">
+                <span className="text-[10px] text-emerald-600 font-semibold bg-emerald-50 border border-emerald-100 px-2.5 py-1 rounded-full">
+                  Free Expedited Shipping
+                </span>
+                <span className={`text-[9px] font-mono font-bold tracking-wider uppercase px-2 py-0.5 rounded-md border ${
+                  (product.stock !== undefined ? product.stock : 15) === 0
+                    ? 'text-rose-600 bg-rose-50 border-rose-150'
+                    : (product.stock !== undefined ? product.stock : 15) <= 5
+                    ? 'text-red-600 bg-red-50 border-red-150'
+                    : 'text-emerald-600 bg-emerald-50 border-emerald-150'
+                }`}>
+                  {(product.stock !== undefined ? product.stock : 15) === 0
+                    ? `🔴 OUT OF STOCK`
+                    : (product.stock !== undefined ? product.stock : 15) <= 5
+                    ? `⚠️ Only ${(product.stock !== undefined ? product.stock : 15)} LEFT - ORDER SOON`
+                    : `🟢 IN STOCK (${(product.stock !== undefined ? product.stock : 15)} UNITS)`
+                  }
+                </span>
               </div>
             </div>
 
@@ -230,7 +415,10 @@ export default function ProductDetail() {
                   </button>
                   <span className="px-4 text-xs font-semibold font-mono text-neutral-900">{quantity}</span>
                   <button
-                    onClick={() => setQuantity(quantity + 1)}
+                    onClick={() => setQuantity(prev => {
+                      const maxStock = product.stock !== undefined ? product.stock : 15;
+                      return prev < maxStock ? prev + 1 : prev;
+                    })}
                     className="p-2 hover:bg-neutral-150 text-neutral-500 hover:text-neutral-800 rounded-full transition-colors"
                   >
                     <Plus className="h-3.5 w-3.5" />
@@ -241,10 +429,11 @@ export default function ProductDetail() {
                 <button
                   id="add-to-cart-btn"
                   onClick={handleAddToCart}
-                  className="flex-1 py-3 px-6 text-xs font-semibold text-white bg-neutral-900 hover:bg-neutral-800 rounded-full shadow-md hover:shadow-lg active:scale-[0.98] transition-all flex items-center justify-center space-x-2"
+                  disabled={(product.stock !== undefined ? product.stock : 15) === 0}
+                  className="flex-1 py-3 px-6 text-xs font-semibold text-white bg-neutral-900 hover:bg-neutral-800 disabled:bg-neutral-200 disabled:text-neutral-400 disabled:cursor-not-allowed rounded-full shadow-md hover:shadow-lg active:scale-[0.98] transition-all flex items-center justify-center space-x-2"
                 >
                   <Sparkles className="h-3.5 w-3.5 text-emerald-400" />
-                  <span>Add to Cart - ${(product.price * quantity).toLocaleString()}</span>
+                  <span>{(product.stock !== undefined ? product.stock : 15) === 0 ? 'Out of Stock' : `Add to Cart - $${(product.price * quantity).toLocaleString()}`}</span>
                 </button>
               </div>
             </div>
@@ -330,6 +519,219 @@ export default function ProductDetail() {
                 </ul>
               </div>
             )}
+          </div>
+        </section>
+
+        {/* Reviews Section */}
+        <section id="reviews-section" className="mt-20 border-t border-neutral-100 pt-12">
+          <div className="border-b border-neutral-100 pb-5 mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest font-mono">User Feedback</span>
+              <h2 className="text-xl font-bold text-neutral-950 tracking-tight mt-0.5 flex items-center gap-2">
+                <MessageSquare className="h-5 w-5 text-neutral-500" />
+                Customer Reviews ({reviews.length})
+              </h2>
+            </div>
+            {/* Average score */}
+            {reviews.length > 0 && (
+              <div className="flex items-center gap-2 bg-neutral-50 px-3 py-1.5 rounded-full border border-neutral-100">
+                <div className="flex items-center text-amber-500">
+                  <Star className="h-4 w-4 fill-current" />
+                </div>
+                <span className="text-xs font-bold text-neutral-900">
+                  {(reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)} / 5.0
+                </span>
+                <span className="text-[10px] text-neutral-500 font-medium">average score</span>
+              </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
+            {/* Left side: Review Form */}
+            <div className="bg-neutral-50/50 p-6 rounded-2xl border border-neutral-100">
+              <h3 className="text-sm font-semibold text-neutral-950 mb-1.5">Share Your Experience</h3>
+              <p className="text-xs text-neutral-500 mb-6 leading-relaxed">
+                Only verified purchasers can leave reviews. Your rating helps our community.
+              </p>
+
+              {token ? (
+                <form onSubmit={handlePostReview} className="space-y-4">
+                  {/* Rating Selector */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-neutral-700">Overall Rating</label>
+                    <div className="flex items-center gap-1.5">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => setRatingInput(star)}
+                          className="text-neutral-300 hover:text-amber-400 transition-colors"
+                        >
+                          <Star
+                            className={`h-6 w-6 transition-all ${
+                              star <= ratingInput ? 'text-amber-500 fill-amber-500 scale-105' : 'text-neutral-200'
+                            }`}
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Comment box */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-neutral-700">Review Message</label>
+                    <textarea
+                      value={commentInput}
+                      onChange={(e) => setCommentInput(e.target.value)}
+                      placeholder="What did you like or dislike about this product? How is the quality?"
+                      rows={4}
+                      className="w-full text-xs p-3 border border-neutral-200 rounded-xl bg-white focus:outline-none focus:ring-1 focus:ring-neutral-900 focus:border-neutral-900"
+                    />
+                  </div>
+
+                  {reviewError && (
+                    <div className="flex items-start gap-2 text-xs text-red-600 bg-red-50 p-3 rounded-xl border border-red-100 leading-relaxed">
+                      <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                      <span>{reviewError}</span>
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    className="w-full py-2.5 px-4 text-xs font-semibold text-white bg-neutral-950 hover:bg-neutral-850 rounded-xl shadow-sm transition-all cursor-pointer"
+                  >
+                    Submit Review
+                  </button>
+                </form>
+              ) : (
+                <div className="py-6 text-center">
+                  <p className="text-xs text-neutral-500 leading-relaxed">
+                    You must be signed in to submit a review for this product.
+                  </p>
+                  <Link
+                    to="/login"
+                    className="mt-4 inline-flex items-center justify-center w-full py-2 px-4 text-xs font-semibold text-neutral-900 bg-white border border-neutral-200 hover:bg-neutral-50 rounded-xl transition-all"
+                  >
+                    Sign In
+                  </Link>
+                </div>
+              )}
+            </div>
+
+            {/* Right side: Reviews List */}
+            <div className="lg:col-span-2 space-y-6">
+              {reviews.length === 0 ? (
+                <div className="py-12 text-center border border-dashed border-neutral-200 rounded-2xl">
+                  <p className="text-xs text-neutral-400">No customer reviews yet. Be the first to share yours!</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-neutral-100 space-y-6">
+                  {reviews.map((review) => (
+                    <div key={review._id} className="pt-6 first:pt-0 space-y-2">
+                      {/* Review header */}
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          {/* Stars */}
+                          <div className="flex items-center text-amber-500 space-x-0.5">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                className={`h-3.5 w-3.5 ${
+                                  i < review.rating ? 'fill-current' : 'text-neutral-200'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                          <span className="text-xs font-semibold text-neutral-950">{review.userName}</span>
+                          <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+                            <CheckCircle className="h-2.5 w-2.5" />
+                            Verified Purchaser
+                          </span>
+                        </div>
+                        <div className="text-[10px] text-neutral-400 font-mono">
+                          {new Date(review.createdAt).toLocaleDateString(undefined, {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Editing state vs display state */}
+                      {editingReviewId === review._id ? (
+                        <div className="space-y-3 bg-neutral-50 p-4 rounded-xl border border-neutral-150 mt-2">
+                          <div className="flex items-center gap-1.5">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <button
+                                key={star}
+                                type="button"
+                                onClick={() => setEditingRating(star)}
+                                className="text-neutral-300 hover:text-amber-400 transition-colors"
+                              >
+                                <Star
+                                  className={`h-4 w-4 ${
+                                    star <= editingRating ? 'text-amber-500 fill-amber-500' : 'text-neutral-200'
+                                  }`}
+                                />
+                              </button>
+                            ))}
+                          </div>
+                          <textarea
+                            value={editingComment}
+                            onChange={(e) => setEditingComment(e.target.value)}
+                            rows={3}
+                            className="w-full text-xs p-2.5 border border-neutral-200 rounded-lg bg-white focus:outline-none"
+                          />
+                          <div className="flex items-center gap-2 justify-end">
+                            <button
+                              onClick={() => setEditingReviewId(null)}
+                              className="px-3 py-1 text-xs text-neutral-500 hover:text-neutral-800 transition-colors"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              onClick={() => handleEditReview(review._id)}
+                              className="px-3 py-1 text-xs font-semibold text-white bg-neutral-900 hover:bg-neutral-800 rounded-lg shadow-sm transition-colors cursor-pointer"
+                            >
+                              Save Changes
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-neutral-600 leading-relaxed pl-1">
+                          {review.comment}
+                        </p>
+                      )}
+
+                      {/* Action buttons (only show if author or admin) */}
+                      {(review.userId === user?.id || review.userId === (user as any)?._id || user?.role === 'admin') && editingReviewId !== review._id && (
+                        <div className="flex items-center gap-3 pl-1 text-[10px] text-neutral-400 font-semibold mt-1">
+                          <button
+                            onClick={() => {
+                              setEditingReviewId(review._id);
+                              setEditingComment(review.comment);
+                              setEditingRating(review.rating);
+                            }}
+                            className="inline-flex items-center gap-1 hover:text-neutral-800 transition-colors cursor-pointer"
+                          >
+                            <Edit className="h-3 w-3" />
+                            <span>Edit Review</span>
+                          </button>
+                          <span className="h-2 w-px bg-neutral-200" />
+                          <button
+                            onClick={() => handleDeleteReview(review._id)}
+                            className="inline-flex items-center gap-1 hover:text-red-600 transition-colors cursor-pointer"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                            <span>Delete</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </section>
 
