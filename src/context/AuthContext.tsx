@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '../types';
 
 interface AuthContextType {
@@ -191,9 +191,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setWishlist([]);
   };
 
-  const clearError = useCallback(() => {
+  const clearError = () => {
     setError(null);
-  }, []);
+  };
 
   const toggleWishlist = async (productId: string): Promise<void> => {
     if (!token) {

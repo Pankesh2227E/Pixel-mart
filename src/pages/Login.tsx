@@ -24,24 +24,10 @@ export default function Login() {
     if (user) {
       navigate(from, { replace: true });
     }
-  }, [user, navigate, from]);
-
-  // Clear auth errors on page unmount ONLY
-  useEffect(() => {
     return () => {
       clearError();
     };
-  }, [clearError]);
-
-  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setEmail(e.target.value);
-    if (error) clearError();
-  };
-
-  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPassword(e.target.value);
-    if (error) clearError();
-  };
+  }, [user, navigate, from, clearError]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,7 +88,7 @@ export default function Login() {
                   className="w-full pl-10 pr-4 py-2.5 bg-white border border-neutral-200 rounded-xl text-xs text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-1 focus:ring-neutral-900 focus:border-neutral-900 transition-all"
                   placeholder="name@example.com"
                   value={email}
-                  onChange={handleEmailChange}
+                  onChange={(e) => setEmail(e.target.value)}
                   disabled={loading}
                 />
               </div>
@@ -130,7 +116,7 @@ export default function Login() {
                   className="w-full pl-10 pr-4 py-2.5 bg-white border border-neutral-200 rounded-xl text-xs text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-1 focus:ring-neutral-900 focus:border-neutral-900 transition-all"
                   placeholder="••••••••"
                   value={password}
-                  onChange={handlePasswordChange}
+                  onChange={(e) => setPassword(e.target.value)}
                   disabled={loading}
                 />
               </div>
