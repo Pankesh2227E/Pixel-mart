@@ -6,7 +6,9 @@
 import fs from 'fs';
 import path from 'path';
 
-const DB_FILE = path.join(process.cwd(), 'server', 'local-db.json');
+const DB_FILE = process.env.NODE_ENV === 'production'
+  ? path.join('/tmp', 'local-db.json')
+  : path.join(process.cwd(), 'server', 'local-db.json');
 
 interface LocalUser {
   _id: string;
@@ -172,6 +174,19 @@ function readDB(): LocalDB {
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
       }
+
+      // If in production and writing to /tmp, attempt to copy the original database file
+      const originalPath = path.join(process.cwd(), 'server', 'local-db.json');
+      if (process.env.NODE_ENV === 'production' && fs.existsSync(originalPath)) {
+        try {
+          fs.copyFileSync(originalPath, DB_FILE);
+          const data = fs.readFileSync(DB_FILE, 'utf8');
+          return JSON.parse(data);
+        } catch (copyErr) {
+          console.error('Failed to copy initial local-db.json to /tmp:', copyErr);
+        }
+      }
+
       const initialDB: LocalDB = {
         users: [],
         orders: [],
@@ -261,6 +276,33 @@ export const localDB = {
       return user.wishlist;
     }
     return [];
+  },
+  saveResetToken: (email: string, token: string, expiry: string) => {
+    const db = readDB();
+    const user = db.users.find(u => u.email.toLowerCase() === email.toLowerCase());
+    if (user) {
+      user.resetPasswordToken = token;
+      user.resetPasswordExpires = expiry;
+      writeDB(db);
+      return user;
+    }
+    return null;
+  },
+  resetPasswordWithToken: (token: string, passwordHash: string) => {
+    const db = readDB();
+    const user = db.users.find(u => 
+      u.resetPasswordToken === token && 
+      u.resetPasswordExpires && 
+      new Date(u.resetPasswordExpires).getTime() > Date.now()
+    );
+    if (user) {
+      user.passwordHash = passwordHash;
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpires = undefined;
+      writeDB(db);
+      return user;
+    }
+    return null;
   },
 
   // Orders

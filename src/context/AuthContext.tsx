@@ -152,7 +152,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.message || 'Registration failed.');
+        if (res.status === 409) {
+          setError('An account with this email already exists. Please log in or reset your password.');
+        } else {
+          setError(data.message || 'Registration failed.');
+        }
         setLoading(false);
         return false;
       }

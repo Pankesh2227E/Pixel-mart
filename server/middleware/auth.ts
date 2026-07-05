@@ -1,8 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_jwt_key_12345';
-
 export interface AuthRequest extends Request {
   user?: {
     id: string;
@@ -18,9 +16,10 @@ export function authMiddleware(req: AuthRequest, res: Response, next: NextFuncti
   }
 
   const token = authHeader.split(' ')[1];
+  const jwtSecret = process.env.JWT_SECRET || 'super_secret_jwt_key_12345';
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as {
+    const decoded = jwt.verify(token, jwtSecret) as {
       id: string;
       email: string;
       role: 'user' | 'admin';

@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import UserModel from '../models/User';
 import { getIsConnected } from '../db';
 import { authMiddleware, adminMiddleware, AuthRequest } from '../middleware/auth';
@@ -8,8 +9,6 @@ import { localDB } from '../local-db';
 import { sanitizeBody, validateRegistration, validateLogin } from '../middleware/validation';
 
 const router = Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_jwt_key_12345';
-
 // POST /api/users/register - Register a user
 router.post('/register', sanitizeBody, validateRegistration, async (req: Request, res: Response) => {
   const dbConnected = getIsConnected();
@@ -20,7 +19,7 @@ router.post('/register', sanitizeBody, validateRegistration, async (req: Request
     if (dbConnected) {
       const existingUser = await UserModel.findOne({ email: email.toLowerCase() });
       if (existingUser) {
-        return res.status(400).json({ message: 'User with this email already exists' });
+        return res.status(409).json({ message: 'An account with this email already exists. Please log in or reset your password.' });
       }
 
       // Hash password
@@ -41,9 +40,10 @@ router.post('/register', sanitizeBody, validateRegistration, async (req: Request
       await newUser.save();
 
       // Create JWT token
+      const jwtSecret = process.env.JWT_SECRET || 'super_secret_jwt_key_12345';
       const token = jwt.sign(
         { id: newUser._id, email: newUser.email, role: newUser.role },
-        JWT_SECRET,
+        jwtSecret,
         { expiresIn: '7d' }
       );
 
@@ -60,7 +60,7 @@ router.post('/register', sanitizeBody, validateRegistration, async (req: Request
       console.log('⚠️ Database disconnected, using local file DB fallback for registration');
       const existingUser = localDB.findUserByEmail(email);
       if (existingUser) {
-        return res.status(400).json({ message: 'User with this email already exists' });
+        return res.status(409).json({ message: 'An account with this email already exists. Please log in or reset your password.' });
       }
 
       // Hash password
@@ -82,9 +82,10 @@ router.post('/register', sanitizeBody, validateRegistration, async (req: Request
       localDB.saveUser(newUser);
 
       // Create JWT token
+      const jwtSecret = process.env.JWT_SECRET || 'super_secret_jwt_key_12345';
       const token = jwt.sign(
         { id: newUser._id, email: newUser.email, role: newUser.role },
-        JWT_SECRET,
+        jwtSecret,
         { expiresIn: '7d' }
       );
 
@@ -122,10 +123,21 @@ router.post('/login', sanitizeBody, validateLogin, async (req: Request, res: Res
         return res.status(400).json({ message: 'Invalid credentials' });
       }
 
+      // Ensure initial admin is promoted if not already
+      const isInitialAdmin = user.email.toLowerCase() === 'pankesh2008@gmail.com' ||
+        (process.env.INITIAL_ADMIN_EMAIL && user.email.toLowerCase() === process.env.INITIAL_ADMIN_EMAIL.trim().toLowerCase());
+      
+      if (isInitialAdmin && user.role !== 'admin') {
+        user.role = 'admin';
+        await user.save();
+        console.log(`✅ [Dynamic Admin Promotion] Successfully promoted ${user.email} to Admin on login in MongoDB Atlas!`);
+      }
+
       // Create JWT token
+      const jwtSecret = process.env.JWT_SECRET || 'super_secret_jwt_key_12345';
       const token = jwt.sign(
         { id: user._id, email: user.email, role: user.role },
-        JWT_SECRET,
+        jwtSecret,
         { expiresIn: '7d' }
       );
 
@@ -151,10 +163,21 @@ router.post('/login', sanitizeBody, validateLogin, async (req: Request, res: Res
         return res.status(400).json({ message: 'Invalid credentials' });
       }
 
+      // Ensure initial admin is promoted if not already
+      const isInitialAdmin = user.email.toLowerCase() === 'pankesh2008@gmail.com' ||
+        (process.env.INITIAL_ADMIN_EMAIL && user.email.toLowerCase() === process.env.INITIAL_ADMIN_EMAIL.trim().toLowerCase());
+      
+      if (isInitialAdmin && user.role !== 'admin') {
+        localDB.updateUserRole(user._id, 'admin');
+        user.role = 'admin';
+        console.log(`✅ [Dynamic Admin Promotion] Successfully promoted ${user.email} to Admin on login in Local File DB!`);
+      }
+
       // Create JWT token
+      const jwtSecret = process.env.JWT_SECRET || 'super_secret_jwt_key_12345';
       const token = jwt.sign(
         { id: user._id, email: user.email, role: user.role },
-        JWT_SECRET,
+        jwtSecret,
         { expiresIn: '7d' }
       );
 
@@ -319,8 +342,8 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
   }
 
   const dbConnected = getIsConnected();
-  const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-  const expiry = new Date(Date.now() + 3600000); // 1 hour
+  const token = crypto.randomBytes(32).toString('hex');
+  const expiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
   try {
     let userFound = false;
@@ -336,19 +359,8 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
         name = user.name;
       }
     } else {
-      const users = localDB.getUsers();
-      const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+      const user = localDB.saveResetToken(email, token, expiry.toISOString());
       if (user) {
-        user.resetPasswordToken = token;
-        user.resetPasswordExpires = expiry.toISOString();
-        // Since getUsers() is a read, we should persist back to file
-        const db = {
-          users,
-          orders: localDB.getOrders(),
-          products: localDB.getProducts(),
-          categories: localDB.getCategories()
-        };
-        fs.writeFileSync(path.join(process.cwd(), 'server', 'local-db.json'), JSON.stringify(db, null, 2), 'utf8');
         userFound = true;
         name = user.name;
       }
@@ -373,7 +385,7 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
 │
 │ ${resetUrl}
 │
-│ This link is valid for 1 hour.
+│ This link is valid for 15 minutes.
 │ If you did not make this request, you can ignore this.
 └────────────────────────────────────────────────────────┘
 `);
@@ -419,28 +431,11 @@ router.post('/reset-password', async (req: Request, res: Response) => {
 
       return res.json({ success: true, message: 'Password has been reset successfully.' });
     } else {
-      const users = localDB.getUsers();
-      const user = users.find(u => 
-        u.resetPasswordToken === token && 
-        u.resetPasswordExpires && 
-        new Date(u.resetPasswordExpires).getTime() > Date.now()
-      );
+      const user = localDB.resetPasswordWithToken(token, passwordHash);
 
       if (!user) {
         return res.status(400).json({ message: 'Password reset token is invalid or has expired.' });
       }
-
-      user.passwordHash = passwordHash;
-      user.resetPasswordToken = undefined;
-      user.resetPasswordExpires = undefined;
-
-      const db = {
-        users,
-        orders: localDB.getOrders(),
-        products: localDB.getProducts(),
-        categories: localDB.getCategories()
-      };
-      fs.writeFileSync(path.join(process.cwd(), 'server', 'local-db.json'), JSON.stringify(db, null, 2), 'utf8');
 
       return res.json({ success: true, message: 'Password has been reset successfully.' });
     }

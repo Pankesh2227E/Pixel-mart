@@ -1,10 +1,8 @@
+import 'dotenv/config';
 import express from 'express';
 import path from 'path';
-import dotenv from 'dotenv';
 import { createServer as createViteServer } from 'vite';
-
-// Load environment variables
-dotenv.config();
+import mongoose from 'mongoose';
 
 import { connectDB, getIsConnected } from './server/db';
 import { validateEnvironment } from './server/lib/env-validator';
@@ -34,12 +32,25 @@ async function startServer() {
   app.use(express.json({ limit: '15mb' }));
   app.use(express.urlencoded({ limit: '15mb', extended: true }));
 
+  // Listen for database connection events to dynamically promote/heal the admin accounts
+  const defaultAdmin = 'pankesh2008@gmail.com';
+  mongoose.connection.on('connected', async () => {
+    console.log('🔌 Mongoose connected event fired. Ensuring admin role is boosted in MongoDB...');
+    try {
+      await promoteToAdmin(defaultAdmin);
+      if (process.env.INITIAL_ADMIN_EMAIL && process.env.INITIAL_ADMIN_EMAIL.toLowerCase() !== defaultAdmin) {
+        await promoteToAdmin(process.env.INITIAL_ADMIN_EMAIL);
+      }
+    } catch (err) {
+      console.error('❌ Error in mongoose on-connected admin promotion:', err);
+    }
+  });
+
   // Connect to MongoDB Atlas
   console.log('🔄 Initializing database connection...');
   const dbConnected = await connectDB();
 
   // Securely boot/promote the first admin user
-  const defaultAdmin = 'pankesh2008@gmail.com';
   await promoteToAdmin(defaultAdmin);
   if (process.env.INITIAL_ADMIN_EMAIL && process.env.INITIAL_ADMIN_EMAIL.toLowerCase() !== defaultAdmin) {
     await promoteToAdmin(process.env.INITIAL_ADMIN_EMAIL);
