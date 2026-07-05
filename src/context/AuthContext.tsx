@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { User } from '../types';
 
 interface AuthContextType {
@@ -153,7 +153,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (!res.ok) {
         if (res.status === 409) {
-          setError('An account with this email already exists. Please log in or reset your password.');
+          const errMsg = data.message || 'An account with this email already exists.';
+          if (errMsg.includes('already exists') && !errMsg.includes('log in')) {
+            setError(`${errMsg} Please log in or reset your password.`);
+          } else {
+            setError(errMsg);
+          }
         } else {
           setError(data.message || 'Registration failed.');
         }
@@ -186,9 +191,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setWishlist([]);
   };
 
-  const clearError = () => {
+  const clearError = useCallback(() => {
     setError(null);
-  };
+  }, []);
 
   const toggleWishlist = async (productId: string): Promise<void> => {
     if (!token) {

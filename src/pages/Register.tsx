@@ -28,10 +28,38 @@ export default function Register() {
     if (user) {
       navigate(from, { replace: true });
     }
+  }, [user, navigate, from]);
+
+  // Clear auth errors on page unmount ONLY
+  useEffect(() => {
     return () => {
       clearError();
     };
-  }, [user, navigate, from, clearError]);
+  }, [clearError]);
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setName(e.target.value);
+    if (localError) setLocalError(null);
+    if (error) clearError();
+  };
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEmail(e.target.value);
+    if (localError) setLocalError(null);
+    if (error) clearError();
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPassword(e.target.value);
+    if (localError) setLocalError(null);
+    if (error) clearError();
+  };
+
+  const handleConfirmPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setConfirmPassword(e.target.value);
+    if (localError) setLocalError(null);
+    if (error) clearError();
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,7 +138,7 @@ export default function Register() {
                   className="w-full pl-10 pr-4 py-2.5 bg-white border border-neutral-200 rounded-xl text-xs text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-1 focus:ring-neutral-900 focus:border-neutral-900 transition-all"
                   placeholder="Alex Smith"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={handleNameChange}
                   disabled={loading}
                 />
               </div>
@@ -130,10 +158,16 @@ export default function Register() {
                   className="w-full pl-10 pr-4 py-2.5 bg-white border border-neutral-200 rounded-xl text-xs text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-1 focus:ring-neutral-900 focus:border-neutral-900 transition-all"
                   placeholder="alex@example.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={handleEmailChange}
                   disabled={loading}
                 />
               </div>
+              {displayError && (displayError.includes('email') || displayError.includes('already exists')) && (
+                <div id="duplicate-email-error" className="mt-2 text-rose-600 text-[11px] flex items-start gap-1.5 bg-rose-50/50 border border-rose-100/50 rounded-xl p-2.5">
+                  <AlertCircle className="h-3.5 w-3.5 shrink-0 text-rose-500 mt-0.5" />
+                  <span>{displayError}</span>
+                </div>
+              )}
             </div>
 
             <div>
@@ -150,7 +184,7 @@ export default function Register() {
                   className="w-full pl-10 pr-4 py-2.5 bg-white border border-neutral-200 rounded-xl text-xs text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-1 focus:ring-neutral-900 focus:border-neutral-900 transition-all"
                   placeholder="At least 6 characters"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={handlePasswordChange}
                   disabled={loading}
                 />
               </div>
@@ -170,7 +204,7 @@ export default function Register() {
                   className="w-full pl-10 pr-4 py-2.5 bg-white border border-neutral-200 rounded-xl text-xs text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-1 focus:ring-neutral-900 focus:border-neutral-900 transition-all"
                   placeholder="Repeat your password"
                   value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onChange={handleConfirmPasswordChange}
                   disabled={loading}
                 />
               </div>

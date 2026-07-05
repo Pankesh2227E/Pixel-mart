@@ -19,7 +19,10 @@ router.post('/register', sanitizeBody, validateRegistration, async (req: Request
     if (dbConnected) {
       const existingUser = await UserModel.findOne({ email: email.toLowerCase() });
       if (existingUser) {
-        return res.status(409).json({ message: 'An account with this email already exists. Please log in or reset your password.' });
+        return res.status(409).json({
+          success: false,
+          message: 'An account with this email already exists.'
+        });
       }
 
       // Hash password
@@ -60,7 +63,10 @@ router.post('/register', sanitizeBody, validateRegistration, async (req: Request
       console.log('⚠️ Database disconnected, using local file DB fallback for registration');
       const existingUser = localDB.findUserByEmail(email);
       if (existingUser) {
-        return res.status(409).json({ message: 'An account with this email already exists. Please log in or reset your password.' });
+        return res.status(409).json({
+          success: false,
+          message: 'An account with this email already exists.'
+        });
       }
 
       // Hash password
