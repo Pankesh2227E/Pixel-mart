@@ -370,6 +370,14 @@ async function sendResetEmail(email: string, name: string, resetUrl: string): Pr
   });
   console.log("2. Transporter created");
 
+  try {
+    await transporter.verify();
+    console.log("SMTP connection verified successfully");
+  } catch (err) {
+    console.error("SMTP verification failed:", err);
+    throw err;
+  }
+
   const mailOptions = {
     from: `"PixelMart" <${from}>`,
     to: email,
