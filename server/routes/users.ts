@@ -362,19 +362,18 @@ async function sendResetEmail(email: string, name: string, resetUrl: string): Pr
   const transporter = nodemailer.createTransport({
     host,
     port,
-    secure: port === 465, // True for 465, false for 587/other
+    secure: port === 465,
     auth: {
       user,
       pass,
     },
   });
-  console.log("2. Transporter created");
 
   try {
     await transporter.verify();
-    console.log("SMTP connection verified successfully");
+    console.log("✅ SMTP connection verified");
   } catch (err) {
-    console.error("SMTP verification failed:", err);
+    console.error("❌ SMTP VERIFY FAILED:", err);
     throw err;
   }
 
