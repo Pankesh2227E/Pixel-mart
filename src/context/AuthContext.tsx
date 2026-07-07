@@ -153,12 +153,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (!res.ok) {
         if (res.status === 409) {
-          const errMsg = data.message || 'An account with this email already exists.';
-          if (errMsg.includes('already exists') && !errMsg.includes('log in')) {
-            setError(`${errMsg} Please log in or reset your password.`);
-          } else {
-            setError(errMsg);
-          }
+          setError('An account with this email already exists. Please log in or use a different email.');
         } else {
           setError(data.message || 'Registration failed.');
         }

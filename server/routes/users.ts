@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import nodemailer from 'nodemailer';
 import UserModel from '../models/User';
 import { getIsConnected } from '../db';
 import { authMiddleware, adminMiddleware, AuthRequest } from '../middleware/auth';
@@ -340,6 +341,64 @@ router.put('/:id/role', authMiddleware, adminMiddleware, async (req: AuthRequest
   }
 });
 
+// Helper to send real password reset email using nodemailer
+async function sendResetEmail(email: string, name: string, resetUrl: string): Promise<void> {
+  const host = process.env.SMTP_HOST;
+  const portStr = process.env.SMTP_PORT;
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  const from = process.env.EMAIL_FROM;
+
+  if (!host || !portStr || !user || !pass || !from) {
+    throw new Error('Email sending failed because SMTP credentials are not fully configured in your environment variables. Please ensure SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, and EMAIL_FROM are all set.');
+  }
+
+  const port = parseInt(portStr, 10);
+  if (isNaN(port)) {
+    throw new Error('SMTP_PORT environment variable must be a valid number.');
+  }
+
+  const transporter = nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465, // True for 465, false for 587/other
+    auth: {
+      user,
+      pass,
+    },
+  });
+
+  const mailOptions = {
+    from: `"PixelMart" <${from}>`,
+    to: email,
+    subject: 'Password Reset Request for PixelMart',
+    text: `Hello ${name},
+
+We received a request to reset your password for your PixelMart account. Click the link below to securely set a new password:
+
+${resetUrl}
+
+This link is valid for 15 minutes.
+If you did not make this request, you can ignore this.`,
+    html: `<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 12px; background-color: #ffffff;">
+  <div style="text-align: center; margin-bottom: 24px;">
+    <h1 style="color: #171717; margin: 0; font-size: 24px; font-weight: 700;">PixelMart</h1>
+  </div>
+  <p style="font-size: 14px; color: #404040; line-height: 1.6;">Hello ${name},</p>
+  <p style="font-size: 14px; color: #404040; line-height: 1.6;">We received a request to reset your password for your PixelMart account. Click the button below to securely set a new password:</p>
+  <div style="text-align: center; margin: 32px 0;">
+    <a href="${resetUrl}" style="background-color: #171717; color: #ffffff; padding: 12px 24px; border-radius: 9999px; text-decoration: none; font-weight: 600; font-size: 13px; display: inline-block;">Reset Password</a>
+  </div>
+  <p style="font-size: 12px; color: #737373; line-height: 1.6;">This link is valid for 15 minutes. If the button above doesn't work, copy and paste the following URL into your browser:</p>
+  <p style="font-size: 11px; color: #a3a3a3; word-break: break-all; background-color: #f5f5f5; padding: 8px 12px; border-radius: 6px; font-family: monospace;">${resetUrl}</p>
+  <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
+  <p style="font-size: 12px; color: #737373; line-height: 1.6;">If you did not make this request, you can safely ignore this email.</p>
+</div>`
+  };
+
+  await transporter.sendMail(mailOptions);
+}
+
 // POST /api/users/forgot-password - Handle forgot password token generation
 router.post('/forgot-password', async (req: Request, res: Response) => {
   const { email } = req.body;
@@ -376,7 +435,7 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
     const appUrl = process.env.APP_URL || 'http://localhost:3000';
     const resetUrl = `${appUrl}/reset-password?token=${token}`;
 
-    // Elegant simulated email logger
+    // Elegant simulated email logger (kept as backup/fallback)
     console.log(`
 ┌────────────────────────────────────────────────────────┐
 │               📧 PIXELMART SIMULATED EMAIL            │
@@ -395,6 +454,11 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
 │ If you did not make this request, you can ignore this.
 └────────────────────────────────────────────────────────┘
 `);
+
+    // If user exists, send actual email using nodemailer
+    if (userFound) {
+      await sendResetEmail(email.toLowerCase(), name, resetUrl);
+    }
 
     // Return success response. Also return resetLink to make it exceptionally easy to click and test
     return res.json({
