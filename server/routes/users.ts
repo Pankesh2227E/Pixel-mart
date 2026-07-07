@@ -343,6 +343,7 @@ router.put('/:id/role', authMiddleware, adminMiddleware, async (req: AuthRequest
 
 // Helper to send real password reset email using nodemailer
 async function sendResetEmail(email: string, name: string, resetUrl: string): Promise<void> {
+  console.log("1. Starting sendResetEmail");
   const host = process.env.SMTP_HOST;
   const portStr = process.env.SMTP_PORT;
   const user = process.env.SMTP_USER;
@@ -367,6 +368,7 @@ async function sendResetEmail(email: string, name: string, resetUrl: string): Pr
       pass,
     },
   });
+  console.log("2. Transporter created");
 
   const mailOptions = {
     from: `"PixelMart" <${from}>`,
@@ -397,6 +399,7 @@ If you did not make this request, you can ignore this.`,
   };
 
   await transporter.sendMail(mailOptions);
+  console.log("3. Email sent successfully");
 }
 
 // POST /api/users/forgot-password - Handle forgot password token generation
@@ -467,6 +470,7 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
       resetLink: resetUrl // Returned for development/testing ease
     });
   } catch (error: any) {
+    console.error("Forgot password error:", error);
     res.status(500).json({ message: 'Error processing forgot password request', error: error.message });
   }
 });
