@@ -442,7 +442,7 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
     }
 
     // Build reset URL
-    const appUrl = process.env.APP_URL || 'http://localhost:3000';
+    const appUrl = (process.env.APP_URL || 'http://localhost:3000').replace(/\/+$/, '');
     const resetUrl = `${appUrl}/reset-password?token=${token}`;
 
     // Elegant simulated email logger (kept as backup/fallback)
