@@ -525,6 +525,17 @@ router.post('/reset-password', async (req: Request, res: Response) => {
   }
 });
 
+// GET /api/users/test-email - Temporary email testing endpoint
+router.get('/test-email', async (req: Request, res: Response) => {
+  try {
+    await sendResetEmail('sahupankesh7@gmail.com', 'Test User', 'https://example.com');
+    res.json({ success: true });
+  } catch (error: any) {
+    console.error(error);
+    res.json({ success: false, error: error.message });
+  }
+});
+
 import fs from 'fs';
 import path from 'path';
 
