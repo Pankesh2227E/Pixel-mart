@@ -2,7 +2,6 @@ import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-import nodemailer from 'nodemailer';
 import UserModel from '../models/User';
 import { getIsConnected } from '../db';
 import { authMiddleware, adminMiddleware, AuthRequest } from '../middleware/auth';
@@ -382,15 +381,11 @@ async function sendResetEmail(email: string, name: string, resetUrl: string): Pr
     })
   });
 
-  console.log("Brevo Status:", response.status);
-
   const responseJson = await response.json();
 
   if (!response.ok) {
     throw new Error(JSON.stringify(responseJson));
   }
-
-  console.log("Email sent successfully using Brevo API");
 }
 
 // POST /api/users/forgot-password - Handle forgot password token generation
@@ -449,19 +444,22 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
 └────────────────────────────────────────────────────────┘
 `);
 
-    // If user exists, send actual email using nodemailer
+    // If user exists, send actual email using Brevo API
     if (userFound) {
-      await sendResetEmail(email.toLowerCase(), name, resetUrl);
+      try {
+        await sendResetEmail(email.toLowerCase(), name, resetUrl);
+      } catch (emailError: any) {
+        console.error("Failed to send password reset email:", emailError);
+        throw emailError;
+      }
     }
 
-    // Return success response. Also return resetLink to make it exceptionally easy to click and test
+    // Return success response
     return res.json({
       success: true,
-      message: 'If an account exists with that email, reset instructions have been sent.',
-      resetLink: resetUrl // Returned for development/testing ease
+      message: 'If an account exists with that email, reset instructions have been sent.'
     });
   } catch (error: any) {
-    console.error("Forgot password error:", error);
     res.status(500).json({ message: 'Error processing forgot password request', error: error.message });
   }
 });
@@ -506,17 +504,6 @@ router.post('/reset-password', async (req: Request, res: Response) => {
     }
   } catch (error: any) {
     res.status(500).json({ message: 'Error resetting password', error: error.message });
-  }
-});
-
-// GET /api/users/test-email - Temporary email testing endpoint
-router.get('/test-email', async (req: Request, res: Response) => {
-  try {
-    await sendResetEmail('sahupankesh7@gmail.com', 'Test User', 'https://example.com');
-    res.json({ success: true });
-  } catch (error: any) {
-    console.error(error);
-    res.json({ success: false, error: error.message });
   }
 });
 
