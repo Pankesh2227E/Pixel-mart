@@ -341,72 +341,56 @@ router.put('/:id/role', authMiddleware, adminMiddleware, async (req: AuthRequest
   }
 });
 
-// Helper to send real password reset email using nodemailer
+// Helper to send real password reset email using Brevo Transactional Email API
 async function sendResetEmail(email: string, name: string, resetUrl: string): Promise<void> {
-  console.log("1. Starting sendResetEmail");
-  const host = process.env.SMTP_HOST;
-  const portStr = process.env.SMTP_PORT;
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
-  const from = process.env.EMAIL_FROM;
+  const brevoApiKey = process.env.BREVO_API_KEY;
+  const fromEmail = process.env.EMAIL_FROM;
 
-  if (!host || !portStr || !user || !pass || !from) {
-    throw new Error('Email sending failed because SMTP credentials are not fully configured in your environment variables. Please ensure SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, and EMAIL_FROM are all set.');
+  if (!brevoApiKey || !fromEmail) {
+    throw new Error('Email sending failed because Brevo API credentials (BREVO_API_KEY, EMAIL_FROM) are not configured.');
   }
 
-  const port = parseInt(portStr, 10);
-  if (isNaN(port)) {
-    throw new Error('SMTP_PORT environment variable must be a valid number.');
-  }
-
-  const transporter = nodemailer.createTransport({
-    host,
-    port,
-    secure: port === 465,
-    auth: {
-      user,
-      pass,
+  const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: {
+      'accept': 'application/json',
+      'api-key': brevoApiKey,
+      'content-type': 'application/json'
     },
+    body: JSON.stringify({
+      "sender": {
+        "name": "PixelMart",
+        "email": fromEmail
+      },
+      "to": [
+        {
+          "email": email,
+          "name": name
+        }
+      ],
+      "subject": "Password Reset Request for PixelMart",
+      "htmlContent": `
+    <div style="font-family:sans-serif">
+      <h2>Password Reset</h2>
+      <p>Hello ${name},</p>
+      <p>Click below to reset your password.</p>
+      <a href="${resetUrl}">Reset Password</a>
+      <p>If the button doesn't work:</p>
+      <p>${resetUrl}</p>
+    </div>
+  `
+    })
   });
 
-  try {
-    await transporter.verify();
-    console.log("✅ SMTP connection verified");
-  } catch (err) {
-    console.error("❌ SMTP VERIFY FAILED:", err);
-    throw err;
+  console.log("Brevo Status:", response.status);
+
+  const responseJson = await response.json();
+
+  if (!response.ok) {
+    throw new Error(JSON.stringify(responseJson));
   }
 
-  const mailOptions = {
-    from: `"PixelMart" <${from}>`,
-    to: email,
-    subject: 'Password Reset Request for PixelMart',
-    text: `Hello ${name},
-
-We received a request to reset your password for your PixelMart account. Click the link below to securely set a new password:
-
-${resetUrl}
-
-This link is valid for 15 minutes.
-If you did not make this request, you can ignore this.`,
-    html: `<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 12px; background-color: #ffffff;">
-  <div style="text-align: center; margin-bottom: 24px;">
-    <h1 style="color: #171717; margin: 0; font-size: 24px; font-weight: 700;">PixelMart</h1>
-  </div>
-  <p style="font-size: 14px; color: #404040; line-height: 1.6;">Hello ${name},</p>
-  <p style="font-size: 14px; color: #404040; line-height: 1.6;">We received a request to reset your password for your PixelMart account. Click the button below to securely set a new password:</p>
-  <div style="text-align: center; margin: 32px 0;">
-    <a href="${resetUrl}" style="background-color: #171717; color: #ffffff; padding: 12px 24px; border-radius: 9999px; text-decoration: none; font-weight: 600; font-size: 13px; display: inline-block;">Reset Password</a>
-  </div>
-  <p style="font-size: 12px; color: #737373; line-height: 1.6;">This link is valid for 15 minutes. If the button above doesn't work, copy and paste the following URL into your browser:</p>
-  <p style="font-size: 11px; color: #a3a3a3; word-break: break-all; background-color: #f5f5f5; padding: 8px 12px; border-radius: 6px; font-family: monospace;">${resetUrl}</p>
-  <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
-  <p style="font-size: 12px; color: #737373; line-height: 1.6;">If you did not make this request, you can safely ignore this email.</p>
-</div>`
-  };
-
-  await transporter.sendMail(mailOptions);
-  console.log("3. Email sent successfully");
+  console.log("Email sent successfully using Brevo API");
 }
 
 // POST /api/users/forgot-password - Handle forgot password token generation
