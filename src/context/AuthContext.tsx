@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { User } from '../types';
 
 interface AuthContextType {
@@ -100,7 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loadProfile();
   }, [token]);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = useCallback(async (email: string, password: string): Promise<boolean> => {
     setError(null);
     setLoading(true);
     try {
@@ -143,9 +143,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
       return false;
     }
-  };
+  }, []);
 
-  const register = async (name: string, email: string, password: string): Promise<boolean> => {
+  const register = useCallback(async (name: string, email: string, password: string): Promise<boolean> => {
     setError(null);
     setLoading(true);
     try {
@@ -184,21 +184,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
       return false;
     }
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem('pixelmart_token');
     setToken(null);
     setUser(null);
     setError(null);
     setWishlist([]);
-  };
+  }, []);
 
-  const clearError = () => {
+  const clearError = useCallback(() => {
     setError(null);
-  };
+  }, []);
 
-  const toggleWishlist = async (productId: string): Promise<void> => {
+  const toggleWishlist = useCallback(async (productId: string): Promise<void> => {
     if (!token) {
       // Guest mode - toggle in localStorage
       setWishlist((prev) => {
@@ -227,7 +227,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       console.error('Failed to toggle wishlist:', err);
     }
-  };
+  }, [token]);
 
   return (
     <AuthContext.Provider
