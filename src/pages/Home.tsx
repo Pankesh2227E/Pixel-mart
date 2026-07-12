@@ -248,6 +248,16 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Demo Notice Bar */}
+      <div id="demo-notice-bar" className="bg-neutral-50/80 border-b border-neutral-100 py-3.5 text-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-center space-x-2 text-neutral-600">
+          <span className="inline-block h-1.5 w-1.5 rounded-full bg-neutral-400"></span>
+          <span className="text-[11px] font-medium tracking-wide text-neutral-500">
+            This is a demonstration store. No real orders will be fulfilled. Payments are fully simulated.
+          </span>
+        </div>
+      </div>
+
       {/* 2. Main Store Products & Filters Grid */}
       <section id="store-grid" className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
         
@@ -497,48 +507,6 @@ export default function Home() {
             </motion.div>
           )}
         </AnimatePresence>
-      </section>
-
-      {/* 3. Pixel Premium Ecosystem - Brand Features Section */}
-      <section id="features-bento" className="bg-neutral-50 border-t border-b border-neutral-100 py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-xl mx-auto mb-12">
-            <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest font-mono">Pixel Innovation</span>
-            <h2 className="text-2xl font-bold text-neutral-900 tracking-tight mt-1">Pure Engineering, Seamless Flow</h2>
-            <p className="text-xs text-neutral-500 mt-2">Every device is custom-tailored to work in harmony, unlocking premium AI assistance, health insights, and crisp acoustic fidelity.</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            
-            {/* Feature 1 */}
-            <div className="bg-white border border-neutral-100 p-6 rounded-2xl space-y-3">
-              <div className="h-10 w-10 rounded-xl bg-neutral-50 flex items-center justify-center text-neutral-800 border border-neutral-100">
-                <Cpu className="h-4 w-4" />
-              </div>
-              <h3 className="text-sm font-bold text-neutral-950">Google Tensor Silicon</h3>
-              <p className="text-xs text-neutral-500 leading-relaxed">Custom chips designed by Google to speed up on-device AI tasks, translate languages on the fly, protect data, and elevate photography.</p>
-            </div>
-
-            {/* Feature 2 */}
-            <div className="bg-white border border-neutral-100 p-6 rounded-2xl space-y-3">
-              <div className="h-10 w-10 rounded-xl bg-neutral-50 flex items-center justify-center text-neutral-800 border border-neutral-100">
-                <Camera className="h-4 w-4" />
-              </div>
-              <h3 className="text-sm font-bold text-neutral-950">Actua Display Technology</h3>
-              <p className="text-xs text-neutral-500 leading-relaxed">Unbelievably bright, vibrant, and sharp screens that adapt dynamically from 1 to 120Hz to preserve battery life while showing crisp details.</p>
-            </div>
-
-            {/* Feature 3 */}
-            <div className="bg-white border border-neutral-100 p-6 rounded-2xl space-y-3">
-              <div className="h-10 w-10 rounded-xl bg-neutral-50 flex items-center justify-center text-neutral-800 border border-neutral-100">
-                <ShieldCheck className="h-4 w-4" />
-              </div>
-              <h3 className="text-sm font-bold text-neutral-950">Titan M2 Security</h3>
-              <p className="text-xs text-neutral-500 leading-relaxed">Enterprise-grade security architecture that guards your biological scans, passwords, pins, and privacy keys against cyber intrusions.</p>
-            </div>
-
-          </div>
-        </div>
       </section>
 
     </div>

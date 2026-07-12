@@ -16,27 +16,27 @@ const FAQ_ITEMS: FAQItem[] = [
   },
   {
     question: 'What is your return and refund policy?',
-    answer: 'We offer a hassle-free 30-day return policy. Devices must be returned in their original box with all accessories, free of physical damage, and logged out of any active Google accounts.',
+    answer: 'We offer a hassle-free 30-day return policy. Devices must be returned in their original box with all accessories, free of physical damage, and logged out of any active personal accounts.',
     category: 'Shipping'
   },
   {
     question: 'Are these devices covered under official warranty?',
-    answer: 'Absolutely. Every phone, watch, and accessory sold on PixelMart is 100% authentic and carries the official 1-Year Google manufacturer warranty, which can be serviced at any authorized center globally.',
+    answer: 'Absolutely. Every phone, watch, and accessory sold on PixelMart is 100% authentic and carries the official 1-Year manufacturer warranty, which can be serviced at any authorized center globally.',
     category: 'Warranty'
   },
   {
     question: 'How do I claim a warranty repair after 30 days?',
-    answer: 'Simply carry your original PixelMart invoice receipt to your nearest Google Service Center. Alternatively, you can open a support ticket on our Contact page and our specialists will help guide the factory claim process.',
+    answer: 'Simply carry your original PixelMart invoice receipt to your nearest authorized Brand Service Center. Alternatively, you can open a support ticket on our Contact page and our specialists will help guide the factory claim process.',
     category: 'Warranty'
   },
   {
     question: 'Are your devices unlocked for all carriers?',
-    answer: 'Yes, all Google Pixel smartphones sold on our storefront are fully factory unlocked. They support both physical SIM cards and eSIM profiles, making them compatible with any major network carrier worldwide.',
+    answer: 'Yes, all premium smartphones sold on our storefront are fully factory unlocked. They support both physical SIM cards and eSIM profiles, making them compatible with any major network carrier worldwide.',
     category: 'Products'
   },
   {
-    question: 'What is the "Pure Android" experience?',
-    answer: 'Devices purchased here come directly with the Pixel Launcher and default Google stock OS. There is no carrier bloatware, heavy third-party shells, or slow pre-installed duplicate apps. You get instant access to monthly security patches.',
+    question: 'What is the software experience like?',
+    answer: 'Devices purchased here come directly with the default clean stock OS. There is no carrier bloatware, heavy third-party shells, or slow pre-installed duplicate apps. You get instant access to monthly security patches.',
     category: 'Products'
   },
   {

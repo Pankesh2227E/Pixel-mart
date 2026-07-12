@@ -106,7 +106,7 @@ router.post('/register', sanitizeBody, validateRegistration, async (req: Request
       });
     }
   } catch (error: any) {
-    res.status(500).json({ message: 'Server error during registration', error: error.message });
+    res.status(500).json({ message: 'Something went wrong. Please try again.', error: error.message });
   }
 });
 
@@ -120,13 +120,13 @@ router.post('/login', sanitizeBody, validateLogin, async (req: Request, res: Res
     if (dbConnected) {
       const user = await UserModel.findOne({ email: email.toLowerCase() });
       if (!user) {
-        return res.status(400).json({ message: 'Invalid credentials' });
+        return res.status(404).json({ message: "This account doesn't exist. Please create an account first." });
       }
 
       // Verify password
       const isMatch = await bcrypt.compare(password, user.passwordHash);
       if (!isMatch) {
-        return res.status(400).json({ message: 'Invalid credentials' });
+        return res.status(401).json({ message: "Incorrect password." });
       }
 
       // Ensure initial admin is promoted if not already
@@ -160,13 +160,13 @@ router.post('/login', sanitizeBody, validateLogin, async (req: Request, res: Res
       console.log('⚠️ Database disconnected, using local file DB fallback for login');
       const user = localDB.findUserByEmail(email);
       if (!user) {
-        return res.status(400).json({ message: 'Invalid credentials' });
+        return res.status(404).json({ message: "This account doesn't exist. Please create an account first." });
       }
 
       // Verify password
       const isMatch = await bcrypt.compare(password, user.passwordHash);
       if (!isMatch) {
-        return res.status(400).json({ message: 'Invalid credentials' });
+        return res.status(401).json({ message: "Incorrect password." });
       }
 
       // Ensure initial admin is promoted if not already
@@ -198,7 +198,7 @@ router.post('/login', sanitizeBody, validateLogin, async (req: Request, res: Res
       });
     }
   } catch (error: any) {
-    res.status(500).json({ message: 'Server error during login', error: error.message });
+    res.status(500).json({ message: 'Something went wrong. Please try again.', error: error.message });
   }
 });
 
@@ -450,7 +450,7 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
         await sendResetEmail(email.toLowerCase(), name, resetUrl);
       } catch (emailError: any) {
         console.error("Failed to send password reset email:", emailError);
-        throw emailError;
+        return res.status(500).json({ message: 'Unable to send reset email. Please try again later.' });
       }
     }
 

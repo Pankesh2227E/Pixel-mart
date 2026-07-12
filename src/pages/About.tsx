@@ -8,7 +8,7 @@ export default function About() {
     document.title = "About Us | PixelMart Premium Devices";
     const metaDesc = document.querySelector('meta[name="description"]');
     if (metaDesc) {
-      metaDesc.setAttribute('content', "Discover PixelMart's mission to curate the world's most premium, authentic Google devices with ultimate security and express shipping.");
+      metaDesc.setAttribute('content', "Discover PixelMart's mission to curate the world's most premium, authentic devices with ultimate security and express shipping.");
     }
     window.scrollTo(0, 0);
   }, []);
@@ -32,7 +32,7 @@ export default function About() {
               <span className="text-neutral-400">Pixel-Perfect Experience.</span>
             </h1>
             <p className="mt-6 text-sm text-neutral-400 max-w-2xl mx-auto leading-relaxed">
-              At PixelMart, we are dedicated to bringing you the finest selection of Google Pixel devices and official ecosystem accessories, curated for performance and reliability.
+              At PixelMart, we are dedicated to bringing you the finest selection of premium hardware devices and official accessories, curated for performance and reliability.
             </p>
           </motion.div>
         </div>
@@ -57,9 +57,9 @@ export default function About() {
               <div className="h-10 w-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
                 <Cpu className="h-5 w-5" />
               </div>
-              <h3 className="text-sm font-bold text-neutral-900">Pure Android Philosophy</h3>
+              <h3 className="text-sm font-bold text-neutral-900">Pure Operating Philosophy</h3>
               <p className="text-xs text-neutral-500 leading-relaxed">
-                We believe in devices without bloatware. Experience the Android operating system exactly as Google's engineers designed it: clean, fluid, and incredibly powerful.
+                We believe in devices without bloatware. Experience clean, fluid, and incredibly powerful software exactly as it was meant to be.
               </p>
             </motion.div>
 
@@ -106,7 +106,7 @@ export default function About() {
               <span className="text-[10px] font-semibold text-neutral-400 uppercase tracking-widest font-mono">Our Journey</span>
               <h2 className="text-2xl font-bold tracking-tight text-neutral-900">Curating the Future of Mobile Hardware</h2>
               <p className="text-xs text-neutral-500 leading-relaxed">
-                Founded in 2024, PixelMart arose from a simple realization: premium hardware deserves a premium shopping experience. Instead of clunky, bloated e-commerce templates, we set out to build an elegant storefront that matches Google's sleek design ethos.
+                Founded in 2024, PixelMart arose from a simple realization: premium hardware deserves a premium shopping experience. Instead of clunky, bloated e-commerce templates, we set out to build an elegant storefront that matches our sleek, minimalist design ethos.
               </p>
               <p className="text-xs text-neutral-500 leading-relaxed">
                 We design and maintain specialized pipelines that secure official warranty packages, rapid premium delivery routes, and custom trade-in solutions. Today, we serve over 50,000 Android enthusiasts across the continent.

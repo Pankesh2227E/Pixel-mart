@@ -72,7 +72,7 @@ export default function CartDrawer() {
                     <ShoppingBag className="h-5 w-5" />
                   </div>
                   <h3 className="text-sm font-semibold text-neutral-900 mb-1">Your cart is empty</h3>
-                  <p className="text-xs text-neutral-500 max-w-[240px] mb-6">Explore our curated collection of Google Pixel products to find your perfect fit.</p>
+                  <p className="text-xs text-neutral-500 max-w-[240px] mb-6">Explore our curated collection of premium products to find your perfect fit.</p>
                   <button
                     onClick={() => setIsCartOpen(false)}
                     className="inline-flex items-center px-4 py-2 text-xs font-semibold text-white bg-neutral-900 hover:bg-neutral-800 rounded-full shadow-sm hover:shadow transition-all"

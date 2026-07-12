@@ -53,7 +53,7 @@ export default function Terms() {
               <span>2. Product Listings and Catalog Specs</span>
             </h2>
             <p>
-              We strive to display exact, real-time specifications for all Google devices. In rare instances, manufacturer specs, colors, or storages may vary due to global supply fluctuations. PixelMart reserves the right to cancel orders or refund complete payments if products are listed with incorrect pricing due to systemic errors.
+              We strive to display exact, real-time specifications for all premium devices. In rare instances, manufacturer specs, colors, or storages may vary due to global supply fluctuations. PixelMart reserves the right to cancel orders or refund complete payments if products are listed with incorrect pricing due to systemic errors.
             </p>
           </section>
 
@@ -63,7 +63,7 @@ export default function Terms() {
               <span>3. Return and Replacement Policies</span>
             </h2>
             <p>
-              We provide a premium, hassle-free 30-day return policy on all eligible purchases. Returned devices must be factory reset, free of physical damage, and packaged inside their original manufacturing box with all included accessories. Warranty claims beyond 30 days are serviced directly by Google Authorized Service Centers.
+              We provide a premium, hassle-free 30-day return policy on all eligible purchases. Returned devices must be factory reset, free of physical damage, and packaged inside their original manufacturing box with all included accessories. Warranty claims beyond 30 days are serviced directly by Authorized Service Centers.
             </p>
           </section>
 

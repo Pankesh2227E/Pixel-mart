@@ -294,7 +294,7 @@ export default function ProductDetail() {
                 <ShieldCheck className="h-4 w-4 text-emerald-600" />
                 <span className="text-[10px] font-semibold text-neutral-800">Pixel Protection Shield</span>
               </div>
-              <span className="text-[9px] text-neutral-500">2-Year Google Warranty Included</span>
+              <span className="text-[9px] text-neutral-500">2-Year Official Warranty Included</span>
             </div>
           </div>
 
@@ -506,13 +506,13 @@ export default function ProductDetail() {
               <div className="space-y-4 animate-in fade-in duration-200">
                 <div className="flex items-center space-x-3 text-neutral-800 mb-2">
                   <Package className="h-5 w-5" />
-                  <h3 className="text-sm font-semibold text-neutral-900">Original Google Stitch Packaging</h3>
+                  <h3 className="text-sm font-semibold text-neutral-900">Original Brand Packaging</h3>
                 </div>
                 <p className="text-xs text-neutral-500 leading-relaxed max-w-xl">
                   Designed with environmental sustainability in mind, the packaging is 100% plastic-free and crafted from recycled fibers.
                 </p>
                 <ul className="space-y-2 text-xs text-neutral-600 pl-8 list-disc">
-                  <li>Google Pixel {product.name.replace('Google Pixel', '')} Device</li>
+                  <li>{product.name} Device</li>
                   <li>1m USB-C to USB-C Cable (USB 2.0)</li>
                   <li>SIM Tool (where applicable)</li>
                   <li>Quick Start Guide and Safety Instructions</li>

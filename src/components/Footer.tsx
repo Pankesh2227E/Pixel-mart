@@ -38,7 +38,7 @@ export default function Footer() {
             </div>
             <div className="flex flex-col items-center">
               <ShieldCheck className="h-5 w-5 text-neutral-800 mb-2" />
-              <h4 className="text-xs font-semibold text-neutral-900">Official Google Warranty</h4>
+              <h4 className="text-xs font-semibold text-neutral-900">Official Brand Warranty</h4>
               <p className="text-[10px] text-neutral-500 mt-1 max-w-[160px]">100% authentic devices with original brand guarantees</p>
             </div>
             <div className="flex flex-col items-center">
@@ -128,7 +128,7 @@ export default function Footer() {
         {/* Legal & Footer bottom */}
         <div className="border-t border-neutral-100 mt-12 pt-6 flex flex-col sm:flex-row items-center justify-between text-[10px] text-neutral-400 space-y-4 sm:space-y-0">
           <div className="flex items-center space-x-1">
-            <span>&copy; {new Date().getFullYear()} PixelMart. Built exactly as designed in Google Stitch. All rights reserved.</span>
+            <span>&copy; {new Date().getFullYear()} PixelMart. All rights reserved.</span>
           </div>
           <div className="flex space-x-6">
             <Link to="/privacy" className="hover:text-neutral-600 transition-colors">Privacy Policy</Link>

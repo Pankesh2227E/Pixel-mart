@@ -44,7 +44,7 @@ export default function Privacy() {
               <span>1. Information We Collect</span>
             </h2>
             <p>
-              At PixelMart, we are committed to protecting your privacy. We collect data essential to fulfill your Google ecosystem device orders and improve your shopping experience.
+              At PixelMart, we are committed to protecting your privacy. We collect data essential to fulfill your premium device orders and improve your shopping experience.
             </p>
             <ul className="list-disc pl-5 space-y-1.5 mt-2">
               <li><strong>Personal Identifiers:</strong> Name, shipping/billing address, phone number, and email.</li>

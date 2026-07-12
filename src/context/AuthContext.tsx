@@ -115,7 +115,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.message || 'Login failed. Please check your credentials.');
+        if (res.status === 404) {
+          setError("This account doesn't exist. Please create an account first.");
+        } else if (res.status === 401) {
+          setError("Incorrect password.");
+        } else if (res.status === 400) {
+          setError(data.message || "Email and password are required.");
+        } else {
+          setError("Something went wrong. Please try again.");
+        }
         setLoading(false);
         return false;
       }
@@ -131,7 +139,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
       return true;
     } catch (err: any) {
-      setError('Connection error. Please try again later.');
+      setError('Something went wrong. Please try again.');
       setLoading(false);
       return false;
     }
@@ -153,7 +161,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (!res.ok) {
         if (res.status === 409) {
-          setError('An account with this email already exists. Please log in or use a different email.');
+          setError('An account with this email already exists. Please sign in instead.');
         } else {
           setError(data.message || 'Registration failed.');
         }

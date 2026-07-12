@@ -78,7 +78,7 @@ export default function Contact() {
             </span>
             <h1 className="text-3xl font-extrabold tracking-tight text-neutral-900">Connect with PixelMart</h1>
             <p className="mt-2 text-xs text-neutral-500">
-              Have questions about Google Pixel devices, orders, or warranties? Our elite support team is ready to guide you.
+              Have questions about our premium hardware devices, orders, or warranties? Our elite support team is ready to guide you.
             </p>
           </motion.div>
         </div>

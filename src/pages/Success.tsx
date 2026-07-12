@@ -247,7 +247,7 @@ export default function Success() {
                 </div>
                 <div>
                   <span className="text-neutral-400 block font-semibold text-[10px] uppercase tracking-wider font-mono">Courier service</span>
-                  <span className="text-neutral-800 font-medium block mt-1">Google Stitch Premium Courier</span>
+                  <span className="text-neutral-800 font-medium block mt-1">PixelMart Premium Express Courier</span>
                   <span className="text-neutral-500 block mt-0.5">Service: Insured Priority</span>
                   <span className="text-neutral-500 block">ETA: 2 Business Days</span>
                 </div>
