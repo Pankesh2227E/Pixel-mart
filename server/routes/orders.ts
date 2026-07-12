@@ -318,6 +318,9 @@ router.post('/cashfree-session', async (req: AuthRequest, res: Response) => {
   }
 
   try {
+    console.log("CLIENT ID EXISTS:", !!process.env.CASHFREE_CLIENT_ID);
+    console.log("CLIENT SECRET EXISTS:", !!process.env.CASHFREE_CLIENT_SECRET);
+    console.log("MODE:", process.env.CASHFREE_MODE);
     const cf = getCashfree();
 
     const createOrderRequest = {
@@ -378,7 +381,9 @@ router.post('/cashfree-session', async (req: AuthRequest, res: Response) => {
     });
 
   } catch (error: any) {
-    console.error('Error initiating Cashfree payment session:', error);
+    console.error("Cashfree Error Object:", error);
+    console.error("Cashfree Error Message:", error?.message);
+    console.error("Cashfree Error Response:", error?.response?.data);
     
     // In case Cashfree credentials are not configured, simulate a sandbox mock session
     if (!process.env.CASHFREE_CLIENT_ID || !process.env.CASHFREE_CLIENT_SECRET) {
