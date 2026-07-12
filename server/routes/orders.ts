@@ -52,6 +52,87 @@ ${itemsText}
 `);
 }
 
+// Helper function to sanitize order items and ensure required fields are present
+async function sanitizeOrderItems(items: any[]) {
+  if (!items || !Array.isArray(items)) return items;
+
+  const sanitized = [];
+  for (const item of items) {
+    const newItem = { ...item };
+    
+    // Check and fix selectedOption if missing or empty
+    if (
+      newItem.selectedOption === undefined || 
+      newItem.selectedOption === null || 
+      (typeof newItem.selectedOption === 'string' && newItem.selectedOption.trim() === '')
+    ) {
+      // Find product details
+      let productData: any = null;
+      try {
+        if (getIsConnected()) {
+          productData = await ProductModel.findOne({ id: item.product?.id || item.product });
+        }
+      } catch (e) {
+        console.warn('Failed to fetch product from MongoDB:', e);
+      }
+      
+      if (!productData) {
+        try {
+          productData = localDB.findProductById(item.product?.id || item.product);
+        } catch (e) {
+          console.warn('Failed to fetch product from localDB:', e);
+        }
+      }
+
+      // Assign a sensible default
+      let defaultOption = 'Default';
+      if (productData) {
+        if (productData.storages && productData.storages.length > 0) {
+          defaultOption = productData.storages[0];
+        } else if (productData.sizes && productData.sizes.length > 0) {
+          defaultOption = productData.sizes[0];
+        }
+      }
+      newItem.selectedOption = defaultOption;
+    }
+
+    // Check and fix selectedColor if missing or empty
+    if (
+      newItem.selectedColor === undefined || 
+      newItem.selectedColor === null || 
+      (typeof newItem.selectedColor === 'string' && newItem.selectedColor.trim() === '')
+    ) {
+      // Find product details
+      let productData: any = null;
+      try {
+        if (getIsConnected()) {
+          productData = await ProductModel.findOne({ id: item.product?.id || item.product });
+        }
+      } catch (e) {
+        console.warn('Failed to fetch product from MongoDB:', e);
+      }
+      
+      if (!productData) {
+        try {
+          productData = localDB.findProductById(item.product?.id || item.product);
+        } catch (e) {
+          console.warn('Failed to fetch product from localDB:', e);
+        }
+      }
+
+      // Assign a sensible default
+      let defaultColor = 'Standard';
+      if (productData && productData.colors && productData.colors.length > 0) {
+        defaultColor = productData.colors[0];
+      }
+      newItem.selectedColor = defaultColor;
+    }
+
+    sanitized.push(newItem);
+  }
+  return sanitized;
+}
+
 // POST /api/orders - Create a new order (Users or Guests)
 router.post('/', async (req: AuthRequest, res: Response) => {
   const dbConnected = getIsConnected();
@@ -59,7 +140,8 @@ router.post('/', async (req: AuthRequest, res: Response) => {
   // If database is not connected, we simulate order success in-memory and save to localDB
   if (!dbConnected) {
     const mockId = generateOrderID();
-    const items = req.body.items || [];
+    const rawItems = req.body.items || [];
+    const items = await sanitizeOrderItems(rawItems);
 
     // INVENTORY CHECK (Offline Fallback)
     for (const item of items) {
@@ -110,7 +192,9 @@ router.post('/', async (req: AuthRequest, res: Response) => {
   }
 
   try {
-    const { items, subtotal, tax, shipping, total, shippingAddress, paymentMethod } = req.body;
+    const { subtotal, tax, shipping, total, shippingAddress, paymentMethod } = req.body;
+    const rawItems = req.body.items || [];
+    const items = await sanitizeOrderItems(rawItems);
 
     if (!items || items.length === 0) {
       return res.status(400).json({ message: 'Cannot place an empty order' });
@@ -270,7 +354,9 @@ router.get('/:id', async (req: AuthRequest, res: Response) => {
 // POST /api/orders/cashfree-session - Initiate a payment session
 router.post('/cashfree-session', async (req: AuthRequest, res: Response) => {
   const dbConnected = getIsConnected();
-  const { items, subtotal, tax, shipping, total, shippingAddress, paymentMethod } = req.body;
+  const { subtotal, tax, shipping, total, shippingAddress, paymentMethod } = req.body;
+  const rawItems = req.body.items || [];
+  const items = await sanitizeOrderItems(rawItems);
 
   if (!items || items.length === 0) {
     return res.status(400).json({ message: 'Cannot place an empty order' });
