@@ -8,6 +8,7 @@ import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { CheckCircle2, Home, ArrowRight, ShieldCheck, Mail, Calendar, CreditCard, Box, Truck } from 'lucide-react';
 import { motion } from 'motion/react';
 import { OrderDetails } from '../types';
+import { formatPrice } from '../utils/currency';
 
 export default function Success() {
   const navigate = useNavigate();
@@ -286,7 +287,7 @@ export default function Success() {
                       Finish: {item.selectedColor} | Qty: {item.quantity}
                     </span>
                   </div>
-                  <span className="font-bold text-neutral-900 flex-shrink-0">${item.product.price * item.quantity}</span>
+                  <span className="font-bold text-neutral-900 flex-shrink-0">{formatPrice(item.product.price * item.quantity)}</span>
                 </div>
               ))}
             </div>
@@ -295,11 +296,11 @@ export default function Success() {
             <div className="space-y-2 border-t border-neutral-50 pt-4 text-xs">
               <div className="flex justify-between text-neutral-500">
                 <span>Subtotal</span>
-                <span className="text-neutral-800 font-medium">${order.subtotal}</span>
+                <span className="text-neutral-800 font-medium">{formatPrice(order.subtotal)}</span>
               </div>
               <div className="flex justify-between text-neutral-500">
                 <span>Tax</span>
-                <span className="text-neutral-800 font-medium">${order.tax}</span>
+                <span className="text-neutral-800 font-medium">{formatPrice(order.tax)}</span>
               </div>
               <div className="flex justify-between text-neutral-500">
                 <span>Shipping</span>
@@ -307,7 +308,7 @@ export default function Success() {
               </div>
               <div className="flex justify-between text-sm font-extrabold text-neutral-900 border-t border-neutral-100 pt-3">
                 <span>Total Charge</span>
-                <span>${order.total}</span>
+                <span>{formatPrice(order.total)}</span>
               </div>
             </div>
 

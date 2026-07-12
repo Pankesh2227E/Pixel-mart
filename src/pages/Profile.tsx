@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import { motion } from 'motion/react';
 import { User, LogOut, Package, MapPin, Calendar, CreditCard, Tag, ArrowRight, Loader2, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { formatPrice } from '../utils/currency';
 
 interface OrderItem {
   product: {
@@ -224,7 +225,7 @@ export default function Profile() {
                         {order.status}
                       </span>
                       <span className="text-xs font-bold text-neutral-950">
-                        ${order.total.toLocaleString()}
+                        {formatPrice(order.total)}
                       </span>
                     </div>
                   </div>
@@ -257,7 +258,7 @@ export default function Profile() {
                               </p>
                             </div>
                             <div className="text-xs font-bold text-neutral-700">
-                              ${(item.product.price * item.quantity).toLocaleString()}
+                              {formatPrice(item.product.price * item.quantity)}
                             </div>
                           </div>
                         ))}

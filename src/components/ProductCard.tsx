@@ -10,6 +10,7 @@ import { motion } from 'motion/react';
 import { Product } from '../types';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { formatPrice } from '../utils/currency';
 
 interface ProductCardProps {
   product: Product;
@@ -110,7 +111,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       <div className="flex items-center justify-between mt-4 pt-3 border-t border-neutral-50">
         <div className="flex flex-col">
           <span className="text-[9px] font-semibold text-neutral-400 uppercase tracking-wider">Price</span>
-          <span className="text-sm font-extrabold text-neutral-900">${product.price}</span>
+          <span className="text-sm font-extrabold text-neutral-900">{formatPrice(product.price)}</span>
         </div>
 
         <button

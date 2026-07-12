@@ -20,13 +20,14 @@ import {
   Loader2,
   RefreshCw,
   Image,
-  DollarSign,
+  IndianRupee,
   TrendingUp,
   X,
   Check,
   ChevronRight,
   AlertCircle
 } from 'lucide-react';
+import { formatPrice } from '../utils/currency';
 
 interface IProduct {
   id: string;
@@ -634,11 +635,11 @@ export default function AdminDashboard() {
                     <div>
                       <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">Gross Turnover</span>
                       <span className="text-xl sm:text-2xl font-bold text-neutral-900 mt-1 block">
-                        ${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        {formatPrice(totalRevenue)}
                       </span>
                     </div>
                     <div className="h-12 w-12 bg-neutral-900 text-white rounded-xl flex items-center justify-center font-bold">
-                      <DollarSign className="h-5 w-5" />
+                      <IndianRupee className="h-5 w-5" />
                     </div>
                   </div>
 
@@ -713,7 +714,7 @@ export default function AdminDashboard() {
                                     {order.status}
                                   </span>
                                 </td>
-                                <td className="py-3 font-bold text-neutral-900 text-right">${order.total.toLocaleString()}</td>
+                                <td className="py-3 font-bold text-neutral-900 text-right">{formatPrice(order.total)}</td>
                               </tr>
                             ))}
                           </tbody>
@@ -828,7 +829,7 @@ export default function AdminDashboard() {
                             </td>
                             <td className="py-3.5 px-4 font-mono text-neutral-500">{p.id}</td>
                             <td className="py-3.5 px-4 capitalize text-neutral-600">{p.category}</td>
-                            <td className="py-3.5 px-4 font-bold text-neutral-900 text-right">${p.price.toLocaleString()}</td>
+                            <td className="py-3.5 px-4 font-bold text-neutral-900 text-right">{formatPrice(p.price)}</td>
                             <td className="py-3.5 px-4 text-right">
                               <div className="inline-flex gap-1.5">
                                 <button
@@ -992,7 +993,7 @@ export default function AdminDashboard() {
                                 ))}
                               </div>
                             </td>
-                            <td className="py-4 px-4 font-bold text-neutral-900 text-right align-top">${order.total.toLocaleString()}</td>
+                            <td className="py-4 px-4 font-bold text-neutral-900 text-right align-top">{formatPrice(order.total)}</td>
                             <td className="py-4 px-4 align-top">
                               <select
                                 value={order.status}

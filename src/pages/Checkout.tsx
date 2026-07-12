@@ -8,6 +8,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { ShieldCheck, ArrowLeft, CreditCard, Lock, CheckCircle } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { OrderDetails } from '../types';
+import { formatPrice } from '../utils/currency';
 
 export default function Checkout() {
   const { cart, cartTotal, clearCart, shippingAddress, saveShippingAddress } = useCart();
@@ -84,12 +85,12 @@ export default function Checkout() {
       setCouponSuccess('Success! 10% discount has been applied.');
     } else if (code === 'WELCOME50') {
       if (cartTotal < 100) {
-        setCouponError('Requires a minimum purchase of $100.');
+        setCouponError(`Requires a minimum purchase of ${formatPrice(100)}.`);
         return;
       }
       setDiscountAmount(50);
       setAppliedCoupon(code);
-      setCouponSuccess('Success! $50.00 discount has been applied.');
+      setCouponSuccess(`Success! ${formatPrice(50)} discount has been applied.`);
     } else if (code === 'FREESHIP') {
       setDiscountAmount(0);
       setAppliedCoupon(code);
@@ -392,7 +393,7 @@ export default function Checkout() {
                       <div className="text-[10px] text-neutral-500">Delivered within 1-2 business days. Fully tracked.</div>
                     </div>
                   </div>
-                  <span className="text-xs font-bold text-neutral-800">+$15.00</span>
+                  <span className="text-xs font-bold text-neutral-800">+{formatPrice(15)}</span>
                 </label>
 
                 <label className="flex items-center justify-between p-3.5 border rounded-xl bg-neutral-50 cursor-pointer hover:bg-neutral-100/50 transition-all">
@@ -409,7 +410,7 @@ export default function Checkout() {
                       <div className="text-[10px] text-neutral-500">Next-day guaranteed delivery. Priority handling.</div>
                     </div>
                   </div>
-                  <span className="text-xs font-bold text-neutral-800">+$29.00</span>
+                  <span className="text-xs font-bold text-neutral-800">+{formatPrice(29)}</span>
                 </label>
               </div>
             </div>
@@ -438,7 +439,7 @@ export default function Checkout() {
                       Qty: {item.quantity} | Finish: {item.selectedColor}
                     </p>
                   </div>
-                  <span className="text-xs font-bold text-neutral-900">${item.product.price * item.quantity}</span>
+                  <span className="text-xs font-bold text-neutral-900">{formatPrice(item.product.price * item.quantity)}</span>
                 </div>
               ))}
             </div>
@@ -464,34 +465,34 @@ export default function Checkout() {
               </div>
               {couponError && <p className="text-[10px] text-red-500 font-semibold mt-1.5">{couponError}</p>}
               {couponSuccess && <p className="text-[10px] text-emerald-600 font-semibold mt-1.5">{couponSuccess}</p>}
-              <p className="text-[9px] text-neutral-400 mt-1">Codes: PIXEL10 (10% off), WELCOME50 ($50 off), FREESHIP (Free shipping)</p>
+              <p className="text-[9px] text-neutral-400 mt-1">Codes: PIXEL10 (10% off), WELCOME50 ({formatPrice(50)} off), FREESHIP (Free shipping)</p>
             </div>
 
             {/* Price breakdown */}
             <div className="space-y-2 border-t border-neutral-100 pt-4 text-xs">
               <div className="flex justify-between text-neutral-500">
                 <span>Subtotal</span>
-                <span className="text-neutral-800 font-medium">${cartTotal}</span>
+                <span className="text-neutral-800 font-medium">{formatPrice(cartTotal)}</span>
               </div>
               {appliedCoupon && discountAmount > 0 && (
                 <div className="flex justify-between text-emerald-600 font-semibold">
                   <span>Discount ({appliedCoupon})</span>
-                  <span>-${discountAmount}</span>
+                  <span>-{formatPrice(discountAmount)}</span>
                 </div>
               )}
               <div className="flex justify-between text-neutral-500">
                 <span>Shipping ({shippingTier === 'standard' ? 'Standard' : shippingTier === 'express' ? 'Express' : 'Overnight'})</span>
                 <span className="text-neutral-800 font-medium">
-                  {shipping === 0 ? 'Free' : `$${shipping}`}
+                  {shipping === 0 ? 'Free' : formatPrice(shipping)}
                 </span>
               </div>
               <div className="flex justify-between text-neutral-500">
                 <span>Estimated Tax (8%)</span>
-                <span className="text-neutral-800 font-medium">${tax}</span>
+                <span className="text-neutral-800 font-medium">{formatPrice(tax)}</span>
               </div>
               <div className="flex justify-between text-sm font-bold text-neutral-900 border-t border-neutral-100 pt-3">
                 <span>Order Total</span>
-                <span>${total}</span>
+                <span>{formatPrice(total)}</span>
               </div>
             </div>
 
@@ -514,7 +515,7 @@ export default function Checkout() {
               }`}
             >
               <ShieldCheck className="h-4 w-4" />
-              <span>{isSubmitting ? 'Redirecting to Payment Gateway...' : `Proceed to Payment • $${total}`}</span>
+              <span>{isSubmitting ? 'Redirecting to Payment Gateway...' : `Proceed to Payment • ${formatPrice(total)}`}</span>
             </button>
           </div>
 

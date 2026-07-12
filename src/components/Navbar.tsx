@@ -9,6 +9,7 @@ import { ShoppingBag, Search, Menu, X, Check, ArrowRight, User, Heart } from 'lu
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { PRODUCTS } from '../data/products';
+import { formatPrice } from '../utils/currency';
 
 export default function Navbar() {
   const { cartCount, setIsCartOpen } = useCart();
@@ -106,7 +107,7 @@ export default function Navbar() {
                         <div className="text-xs font-medium text-neutral-900 truncate">{product.name}</div>
                         <div className="text-[10px] text-neutral-500">{product.category}</div>
                       </div>
-                      <div className="text-xs font-medium text-neutral-900">${product.price}</div>
+                      <div className="text-xs font-medium text-neutral-900">{formatPrice(product.price)}</div>
                     </div>
                   ))}
                 </div>
@@ -200,7 +201,7 @@ export default function Navbar() {
                     <img src={product.image} alt={product.name} className="h-8 w-8 object-cover rounded bg-neutral-50" referrerPolicy="no-referrer" />
                     <div className="flex-1 overflow-hidden">
                       <div className="text-xs font-medium text-neutral-950 truncate">{product.name}</div>
-                      <div className="text-[10px] text-neutral-500">${product.price}</div>
+                      <div className="text-[10px] text-neutral-500">{formatPrice(product.price)}</div>
                     </div>
                   </div>
                 ))}

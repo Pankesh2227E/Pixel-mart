@@ -12,6 +12,7 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
 import ProductCard from '../components/ProductCard';
+import { formatPrice } from '../utils/currency';
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
@@ -94,7 +95,7 @@ export default function ProductDetail() {
       document.title = `${product.name} | PixelMart Premium Devices`;
       const metaDesc = document.querySelector('meta[name="description"]');
       if (metaDesc) {
-        metaDesc.setAttribute('content', `Buy the authentic Google ${product.name} at PixelMart. Price: $${product.price}. Specifications: ${Object.entries(product.specs || {}).slice(0, 3).map(([k, v]) => `${k} (${v})`).join(', ')}.`);
+        metaDesc.setAttribute('content', `Buy the authentic Google ${product.name} at PixelMart. Price: ₹${product.price}. Specifications: ${Object.entries(product.specs || {}).slice(0, 3).map(([k, v]) => `${k} (${v})`).join(', ')}.`);
       }
     }
   }, [product]);
@@ -323,7 +324,7 @@ export default function ProductDetail() {
             <div className="p-4 bg-neutral-50 rounded-2xl border border-neutral-100/60 flex items-center justify-between">
               <div>
                 <span className="text-[9px] font-semibold text-neutral-400 uppercase tracking-wider">Purchase Price</span>
-                <div className="text-2xl font-extrabold text-neutral-900 mt-0.5">${product.price}</div>
+                <div className="text-2xl font-extrabold text-neutral-900 mt-0.5">{formatPrice(product.price)}</div>
               </div>
               <div className="flex flex-col items-end gap-1">
                 <span className="text-[10px] text-emerald-600 font-semibold bg-emerald-50 border border-emerald-100 px-2.5 py-1 rounded-full">
@@ -433,7 +434,7 @@ export default function ProductDetail() {
                   className="flex-1 py-3 px-6 text-xs font-semibold text-white bg-neutral-900 hover:bg-neutral-800 disabled:bg-neutral-200 disabled:text-neutral-400 disabled:cursor-not-allowed rounded-full shadow-md hover:shadow-lg active:scale-[0.98] transition-all flex items-center justify-center space-x-2"
                 >
                   <Sparkles className="h-3.5 w-3.5 text-emerald-400" />
-                  <span>{(product.stock !== undefined ? product.stock : 15) === 0 ? 'Out of Stock' : `Add to Cart - $${(product.price * quantity).toLocaleString()}`}</span>
+                  <span>{(product.stock !== undefined ? product.stock : 15) === 0 ? 'Out of Stock' : `Add to Cart - ${formatPrice(product.price * quantity)}`}</span>
                 </button>
               </div>
             </div>

@@ -9,6 +9,7 @@ import { Filter, SlidersHorizontal, ArrowRight, ShieldCheck, Cpu, Camera, Flame 
 import { motion, AnimatePresence } from 'motion/react';
 import { PRODUCTS } from '../data/products';
 import ProductCard from '../components/ProductCard';
+import { formatPrice } from '../utils/currency';
 
 export default function Home() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -147,7 +148,7 @@ export default function Home() {
       subtitle: 'PRO CAMERA. PRO POWER.',
       tag: 'FLAGSHIP DEVICE',
       description: 'The most powerful Pixel yet. Features the revolutionary Google Tensor G4 chip, 16GB of RAM, and our most advanced triple camera system with Gemini-infused features.',
-      price: '$1,099',
+      price: '₹1,099',
       image: 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?auto=format&fit=crop&q=80&w=800',
       link: '/product/pixel-9-pro-xl',
       bgColor: 'bg-neutral-50',
@@ -157,7 +158,7 @@ export default function Home() {
       subtitle: 'COMPREHENSIVE RUN PLANNING.',
       tag: 'NEW REVOLUTION',
       description: 'Discover your potential. Boasts an ultra-bright Actua display, up to 36-hour battery life, and first-of-its-kind Loss of Pulse detection for your peace of mind.',
-      price: '$349',
+      price: '₹349',
       image: 'https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?auto=format&fit=crop&q=80&w=800',
       link: '/product/pixel-watch-3',
       bgColor: 'bg-neutral-50/70',
@@ -167,7 +168,7 @@ export default function Home() {
       subtitle: 'TWICE THE ACTIVE NOISE CANCELING.',
       tag: 'SMART AUDIO',
       description: 'Built for comfort and supreme audio quality. Powered by the Tensor A1 chip, featuring twist-to-adjust stabilizers and silent seal active noise reduction.',
-      price: '$229',
+      price: '₹229',
       image: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&q=80&w=800',
       link: '/product/pixel-buds-pro-2',
       bgColor: 'bg-neutral-50/40',
@@ -313,7 +314,7 @@ export default function Home() {
               )}
               {(minPrice !== '' || maxPrice !== '') && (
                 <span className="inline-flex items-center px-2 py-0.5 text-[9px] font-semibold text-neutral-700 bg-neutral-50 border border-neutral-150 rounded-full">
-                  Price: ${minPrice || '0'} - ${maxPrice || 'any'}
+                  Price: {formatPrice(minPrice || 0)} - {maxPrice !== '' ? formatPrice(maxPrice) : 'any'}
                   <button
                     onClick={() => {
                       setMinPrice('');
@@ -427,7 +428,7 @@ export default function Home() {
 
                 {/* Price Range Filter */}
                 <div>
-                  <span className="block text-xs font-bold text-neutral-800 uppercase tracking-wider mb-2">Price Range (USD)</span>
+                  <span className="block text-xs font-bold text-neutral-800 uppercase tracking-wider mb-2">Price Range (INR)</span>
                   <div className="flex items-center space-x-2">
                     <input
                       type="number"
