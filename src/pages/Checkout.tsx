@@ -181,7 +181,7 @@ export default function Checkout() {
 
         const CashfreeSDK = await loadScript();
         const cashfree = CashfreeSDK({
-          mode: 'sandbox'
+          mode: data.cfMode || 'sandbox'
         });
 
         // Save order temporary cache

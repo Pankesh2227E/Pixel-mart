@@ -373,7 +373,8 @@ router.post('/cashfree-session', async (req: AuthRequest, res: Response) => {
       success: true,
       payment_session_id: cfOrder.payment_session_id,
       order_id: orderId,
-      order: savedOrder
+      order: savedOrder,
+      cfMode: process.env.CASHFREE_MODE === 'production' ? 'production' : 'sandbox'
     });
 
   } catch (error: any) {
@@ -418,7 +419,8 @@ router.post('/cashfree-session', async (req: AuthRequest, res: Response) => {
         payment_session_id: mockSessionId,
         order_id: orderId,
         isSimulated: true,
-        order: savedOrder
+        order: savedOrder,
+        cfMode: 'sandbox'
       });
     }
 
